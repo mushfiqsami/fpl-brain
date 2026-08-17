@@ -77,7 +77,7 @@ Why a local server instead of a plain .html file: the FPL API does not send CORS
 headers, so a browser cannot fetch it directly from a file:// page. The request is
 made here, in Python, and the result is served to your browser from localhost.
 """
-import base64, json, os, sys, threading, time, traceback, webbrowser, socket
+import base64, hashlib, json, os, sys, threading, time, traceback, webbrowser, socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -817,7 +817,7 @@ MANIFEST = json.dumps({
 # Cache the shell so the app opens instantly and still shows the last squad
 # when there is no connection. Live data is always network-first.
 SW = """
-const C='fplbrain-v3';
+const C='fplbrain-__CACHE_VER__';
 const SHELL=['/','/static/icon-192.png','/static/icon-512.png','/manifest.webmanifest'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(C).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -844,6 +844,13 @@ self.addEventListener('fetch',e=>{
 """
 
 PAGE = base64.b64decode(_UI_B64).decode("utf-8")
+
+# The service worker cache name is derived from the page content itself, so any
+# UI change automatically busts phones that already installed the PWA. A fixed
+# version string here previously meant updates silently never reached anyone who
+# had already opened the app once - the SW script must itself change bytes for
+# the browser to even notice there's a new version to install.
+SW = SW.replace("__CACHE_VER__", hashlib.md5(PAGE.encode()).hexdigest()[:10])
 
 
 def serve_cloud(port):
