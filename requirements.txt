@@ -1,0 +1,4 @@
+pulp
+openpyxl
+fastapi
+uvicorn
