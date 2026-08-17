@@ -311,7 +311,12 @@ def compute(force=False):
                                        decay=float(cfg.get("decay", 0.88)),
                                        max_hits=int(cfg.get("max_hits", 2)),
                                        ft_value=float(cfg.get("ft_value", 2.5)))
-        squad_ids = [p["id"] for p in plan["squad"]]
+        # Show the squad you actually own, not the one the optimiser would build.
+        # plan["squad"] is post-transfer, and rendering it as "your XI" made the
+        # app look like it had silently edited the team - incoming targets showed
+        # up in the XI while players you still own disappeared. The transfers are
+        # already spelled out separately in "the call"; this stays factual.
+        squad_ids = list(current)
     else:
         log("Building the best squad from scratch...")
         legal = [p for p in pool if p["p_appear"] >= 0.15]
