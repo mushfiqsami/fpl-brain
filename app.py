@@ -688,6 +688,15 @@ def compute(force=False, for_team=None):
                     force_start=force_start, force_bench=force_bench)
             except Exception:
                 continue
+            # Tripling a score is an even more convex payoff than doubling it,
+            # so the chip belongs on the fattest tail among the credible names,
+            # not on whoever happens to lead on average that week. rank_xi picks
+            # its captain on mean, which had the chip hopping between players on
+            # gaps of a tenth of a point - noise, presented as a decision.
+            cands = sorted((i for i in xg if i in by_id),
+                           key=lambda i: -ep_season.get(i, {}).get(g, 0.0))[:4]
+            if cands:
+                cg = max(cands, key=lambda i: by_id[i].get("cap_score", by_id[i]["ep"]))
             playing = sum(1 for i in xg if ep_season.get(i, {}).get(g, 0) > 0)
             n_fix = {i: len(views_season[g].get(by_id[i]["club_id"], [])) for i in xg if i in by_id}
             chips.append(dict(
