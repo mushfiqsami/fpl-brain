@@ -91,7 +91,7 @@ CONFIG = os.path.join(HERE, "config.json")
 # from the page itself, whether the thing you are looking at is the thing that
 # was last published - a stale service worker or a deploy that never finished
 # otherwise look exactly like a model that is ignoring you.
-BUILD = "0221ff4 · 18 Aug 19:19"
+BUILD = "5014336 · 18 Aug 19:24"
 
 # ---------------------------------------------------------------------------
 # ZeroGPU compatibility.
@@ -130,12 +130,26 @@ def log(msg):
     print("  " + msg, flush=True)
 
 
+# Filled in by build_standalone.py. config.json is not one of the files published
+# to the host, so the bundled app had no measured team priors at all - and FPL
+# zeroes its own strength ratings before a season starts, so there was nothing to
+# fall back to either. Every club came out exactly league average, which flattens
+# fixture difficulty completely and quietly costs a striker at a strong club
+# around two points a week. Same trap as the player baselines, same fix: carry it
+# inside the bundle rather than hoping the file is there.
+EMBEDDED_CONFIG = json.loads(base64.b64decode(
+    "ewogICJfY29tbWVudCI6ICJTZXQgZW50cnlfaWQgdG8geW91ciBGUEwgdGVhbSBudW1iZXIgdG8gZ2V0IHBlcnNvbmFsaXNlZCBhZHZpY2UuIEZpbmQgaXQgaW4gdGhlIFVSTCBvZiB5b3VyIHBvaW50cyBwYWdlOiBmYW50YXN5LnByZW1pZXJsZWFndWUuY29tL2VudHJ5L1hYWFhYWC9ldmVudC8xIiwKICAiZW50cnlfaWQiOiAxMjM0NTY3LAogICJob3Jpem9uIjogNSwKICAiYnVkZ2V0IjogMTAwLjAsCiAgImRlY2F5IjogMC44OCwKICAiZnRfdmFsdWUiOiAyLjUsCiAgIm1heF9oaXRzIjogMiwKICAiZnJlZV90cmFuc2ZlcnNfb3ZlcnJpZGUiOiAxLAogICJwcmlvcl93ZWlnaHRfZ2FtZXMiOiA2LjAsCiAgImhvbWVfbXVsdGlwbGllciI6IDEuMTEsCiAgImF3YXlfbXVsdGlwbGllciI6IDAuODksCiAgImNhY2hlX21pbnV0ZXMiOiA2MCwKICAiX3ByaW9yX25vdGUiOiAiT3B0aW9uYWwuIExlYXZlIGVtcHR5IHRvIHVzZSBGUEwncyBvd24gcHVibGlzaGVkIHRlYW0gc3RyZW5ndGggcmF0aW5ncyBhcyB0aGUgcHJlc2Vhc29uIHByaW9yLiBUaGUgdmFsdWVzIGJlbG93IGFyZSAyMDI1LzI2IHhHIHBlciBnYW1lIG5vcm1hbGlzZWQgdG8gdGhlIGxlYWd1ZSBhdmVyYWdlIChzb3VyY2U6IHhnc3RhdC5jb20gZmluYWwgMjUvMjYgdGFibGUsIGNyb3NzLWNoZWNrZWQgYWdhaW5zdCB0aGUgb2ZmaWNpYWwgMTA0NS1nb2FsIHNlYXNvbiB0b3RhbCkuIiwKICAicHJpb3JfYXR0YWNrIjogewogICAgIkFyc2VuYWwiOiAxLjI2OCwKICAgICJNYW4gQ2l0eSI6IDEuMzczLAogICAgIk1hbiBVdGQiOiAxLjI1LAogICAgIkFzdG9uIFZpbGxhIjogMS4wMDQsCiAgICAiTGl2ZXJwb29sIjogMS4wNzQsCiAgICAiQm91cm5lbW91dGgiOiAxLjEyNywKICAgICJTdW5kZXJsYW5kIjogMC43NTcsCiAgICAiQnJpZ2h0b24iOiAwLjk2OCwKICAgICJCcmVudGZvcmQiOiAxLjA1NiwKICAgICJDaGVsc2VhIjogMS4xNDQsCiAgICAiRnVsaGFtIjogMC45NTEsCiAgICAiTmV3Y2FzdGxlIjogMS4wMzksCiAgICAiRXZlcnRvbiI6IDAuODYzLAogICAgIkxlZWRzIjogMS4xMDksCiAgICAiQ3J5c3RhbCBQYWxhY2UiOiAxLjAyMSwKICAgICJOb3R0J20gRm9yZXN0IjogMC45MTUsCiAgICAiU3B1cnMiOiAwLjg0NSwKICAgICJDb3ZlbnRyeSI6IDAuODIsCiAgICAiSHVsbCI6IDAuODIsCiAgICAiSXBzd2ljaCI6IDAuODIKICB9LAogICJwcmlvcl9kZWZlbmNlIjogewogICAgIkFyc2VuYWwiOiAwLjU4MSwKICAgICJNYW4gQ2l0eSI6IDAuODQ1LAogICAgIk1hbiBVdGQiOiAwLjg4LAogICAgIkFzdG9uIFZpbGxhIjogMC44OTgsCiAgICAiTGl2ZXJwb29sIjogMC45MTUsCiAgICAiQm91cm5lbW91dGgiOiAxLjA5MiwKICAgICJTdW5kZXJsYW5kIjogMS4wNTYsCiAgICAiQnJpZ2h0b24iOiAwLjk2OCwKICAgICJCcmVudGZvcmQiOiAxLjA1NiwKICAgICJDaGVsc2VhIjogMC45NTEsCiAgICAiRnVsaGFtIjogMS4wMjEsCiAgICAiTmV3Y2FzdGxlIjogMS4wNTYsCiAgICAiRXZlcnRvbiI6IDAuOTUxLAogICAgIkxlZWRzIjogMS4wMjEsCiAgICAiQ3J5c3RhbCBQYWxhY2UiOiAxLjAwNCwKICAgICJOb3R0J20gRm9yZXN0IjogMS4wMjEsCiAgICAiU3B1cnMiOiAwLjk2OCwKICAgICJDb3ZlbnRyeSI6IDEuMTUsCiAgICAiSHVsbCI6IDEuMTUsCiAgICAiSXBzd2ljaCI6IDEuMTUKICB9LAogICJzaW1fcnVucyI6IDMwMDAsCiAgImNhcHRhaW5fY2VpbGluZ193ZWlnaHQiOiAwLjM1LAogICJzdGFja19wZW5hbHR5IjogMC4yNQp9").decode("utf-8"))
+
+
 def load_config():
+    """Embedded defaults, overlaid with config.json when one exists."""
+    cfg = dict(EMBEDDED_CONFIG)
     try:
         with open(CONFIG, encoding="utf-8") as f:
-            return json.load(f)
+            cfg.update(json.load(f))
     except Exception:
-        return {}
+        pass
+    return cfg
 
 
 def save_config(cfg):
