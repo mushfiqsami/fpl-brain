@@ -58,6 +58,33 @@ MEASURED_PER_GW = 61.8
 MEASURED_SD_GW = 21.2
 MEASURED_NOTE = "season_test.py, 16 walk-forward gameweeks of 2025/26"
 
+# --- what a target is worth, in context -------------------------------------
+# The 2025/26 competition was won with 2538. Reported by the owner, not derived
+# here, and worth more than any of the arithmetic above: it is the only figure
+# that says what a target actually MEANS. Ten million entrants, a whole season,
+# and the best of them finished on 2538 - so 2700 is not an ambitious target, it
+# is roughly 160 points beyond what won the game.
+#
+# This belongs in the model rather than in someone's head because a target with
+# no benchmark quietly becomes a stick to measure a good season against and find
+# it wanting. 66.8 a gameweek won last season. Sustaining that is the goal.
+WINNER_LAST_SEASON = 2538
+BENCHMARKS = (
+    ("won the game", 2538),
+    ("top 1k", 2400),
+    ("top 10k", 2300),
+    ("top 100k", 2200),
+    ("average manager", 2050),
+)
+
+
+def benchmark(total):
+    """What a season total is worth, against what people actually score."""
+    for label, mark in BENCHMARKS:
+        if total >= mark:
+            return label, mark
+    return "below average", BENCHMARKS[-1][1]
+
 
 def _phi(z):
     """Standard normal CDF, via erf - no scipy in this project."""
@@ -287,7 +314,27 @@ def assess(target, points_so_far, gws_played, projection, best_possible,
     # hundreds of points wide, so an ambitious target is usually neither certain
     # nor impossible, just unlikely by a stateable amount.
     pct = out["p_target"] * 100
-    if pct >= 45:
+    # Judge the target against what actually wins before judging the squad
+    # against the target. A number nobody has ever reached is not a standard to
+    # fall short of; it is the wrong number.
+    beats_winner = target > WINNER_LAST_SEASON
+    exp_label, _exp_mark = benchmark(out["expected"])
+    stretch_label, _sm = benchmark(out["stretch"])
+    context = dict(
+        winner=WINNER_LAST_SEASON,
+        target_vs_winner=target - WINNER_LAST_SEASON,
+        expected_rank=exp_label, stretch_rank=stretch_label,
+        note=(f"Last season was won with {WINNER_LAST_SEASON}. "
+              + (f"{target} is {target - WINNER_LAST_SEASON} beyond that, so it is not a "
+                 f"stretch target - it is better than anyone managed. "
+                 if beats_winner else
+                 f"{target} would have finished inside the top few thousand. ")
+              + f"On current form this squad projects {out['expected']} ({exp_label}), "
+                f"with a good season reaching about {out['stretch']} ({stretch_label})."))
+    if beats_winner:
+        headline = (f"{target} is past what won last season ({WINNER_LAST_SEASON}). "
+                    f"Aim at {out['stretch']} - that is {stretch_label}")
+    elif pct >= 45:
         headline = f"{target} is live - about a {pct:.0f}% chance on measured form"
     elif pct >= 15:
         headline = f"{target} is a stretch - about {pct:.0f}%, and it needs the variance"
@@ -299,6 +346,7 @@ def assess(target, points_so_far, gws_played, projection, best_possible,
 
     return dict(pace=p, posture=post, posture_note=why, ceiling_appetite=appetite,
                 reachable=reach, levers=lev, headline=headline,
+                context=context,
                 outcome=out, measured_per_gw=round(per_gw, 2),
                 measured_note=MEASURED_NOTE,
                 floor=floor, ceiling=ceiling)
