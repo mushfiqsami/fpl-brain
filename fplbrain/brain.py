@@ -314,6 +314,29 @@ def assess(target, points_so_far, gws_played, projection, best_possible,
     # hundreds of points wide, so an ambitious target is usually neither certain
     # nor impossible, just unlikely by a stateable amount.
     pct = out["p_target"] * 100
+
+    # Chasing a target you cannot reach is worse than not chasing it.
+    #
+    # Posture is driven by the gap, so an ambitious target forces maximum
+    # variance by construction. That logic only holds while the target is
+    # actually reachable. Extra variance does raise the chance of clearing a
+    # distant mark - but it lowers the median, and buying a rise from 0.5% to
+    # perhaps 1% at the cost of roughly a point a gameweek is a bad trade unless
+    # nothing except that number counts. Wanting to finish as high as possible
+    # and wanting a 0.5% shot are different objectives with different answers,
+    # and the tool should not silently pick the second.
+    #
+    # So below a threshold of plausibility the objective switches to the best
+    # finish available, and says so rather than quietly chasing.
+    CHASE_WORTH_IT = 0.05
+    chasing_mirage = out["p_target"] < CHASE_WORTH_IT and post == "chase"
+    if chasing_mirage:
+        post, appetite = "press", CEILING_APPETITE["press"]
+        why = (f"The gap says chase, but {target} is a {pct:.1f}% outcome - buying maximum "
+               f"variance for that costs about a point a gameweek off the median and "
+               f"barely moves the odds. Objective switched to the best finish available: "
+               f"lean to the higher ceiling on close calls, without wrecking the expectation.")
+
     # Judge the target against what actually wins before judging the squad
     # against the target. A number nobody has ever reached is not a standard to
     # fall short of; it is the wrong number.
@@ -346,7 +369,7 @@ def assess(target, points_so_far, gws_played, projection, best_possible,
 
     return dict(pace=p, posture=post, posture_note=why, ceiling_appetite=appetite,
                 reachable=reach, levers=lev, headline=headline,
-                context=context,
+                context=context, chasing_mirage=chasing_mirage,
                 outcome=out, measured_per_gw=round(per_gw, 2),
                 measured_note=MEASURED_NOTE,
                 floor=floor, ceiling=ceiling)
