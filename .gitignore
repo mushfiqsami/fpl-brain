@@ -1,4 +1,4 @@
-data/
+data/*
 # except the seeded prior: build_standalone.py embeds it, so a clone that
 # lacks it produces a bundle with no player baselines at all.
 !data/player_prior.json

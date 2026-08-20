@@ -20,7 +20,12 @@ MODULES = sorted(
     f[:-3] for f in os.listdir(os.path.join(HERE, "fplbrain"))
     if f.endswith(".py") and f != "__init__.py"
 )
-OUT = os.path.join(HERE, "phone", "app.py")   # HF Gradio Spaces run app.py
+# Where the bundle lands depends on which layout you are in. The repo keeps
+# app.py at the root next to this script; the older working tree kept it in a
+# phone/ subfolder. Writing blindly to phone/ meant a clone of the repo built a
+# second copy nobody deploys and left the real app.py untouched.
+OUT = (os.path.join(HERE, "app.py") if os.path.exists(os.path.join(HERE, "app.py"))
+       else os.path.join(HERE, "phone", "app.py"))
 
 
 def read(*p):
