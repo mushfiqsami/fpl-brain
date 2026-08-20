@@ -1083,6 +1083,28 @@ function drawBrain(){
           <div class="s">${p.shortfall>0?p.shortfall+' short':Math.abs(p.shortfall)+' clear'}</div></div>
       </div>
 
+      ${B.outcome?`<div class="sechead">The season as a range, not a number</div>
+      <div class="strip" style="margin-bottom:10px">
+        <div class="tile"><div class="k">Expected finish</div>
+          <div class="v"><span class="num">${B.outcome.expected}</span></div>
+          <div class="s">on measured delivery, ${B.measured_per_gw}/GW</div></div>
+        <div class="tile"><div class="k">Likely range</div>
+          <div class="v"><span class="num" style="font-size:20px">${B.outcome.p10}–${B.outcome.p90}</span></div>
+          <div class="s">10th to 90th percentile</div></div>
+        <div class="tile"><div class="k">Chance of ${p.target}</div>
+          <div class="v"><span class="num" style="color:${
+            B.outcome.p_target>=0.15?'var(--turf)':(B.outcome.p_target>=0.02?'var(--sodium)':'var(--coral)')}">${
+            (B.outcome.p_target*100).toFixed(1)}%</span></div>
+          <div class="s">a season is ±${B.outcome.sd} wide</div></div>
+        <div class="tile"><div class="k">Realistic aim</div>
+          <div class="v"><span class="num">${B.outcome.stretch}</span></div>
+          <div class="s">a good season, not a miracle</div></div>
+      </div>
+      <p class="note" style="border:none">The model projects <b>${p.projection.toFixed(1)}</b> a
+        gameweek. Measured against real results it delivered <b>${B.measured_per_gw}</b> — the
+        forecast above uses the second, because a projection is what the model hopes for and this
+        is what the hoping was worth. Source: ${esc(B.measured_note)}.</p>`:''}
+
       <p class="note" style="border:none;color:${r.verdict==='on'?'var(--dim)':'var(--amber)'}">
         ${esc(r.note)}</p>
 

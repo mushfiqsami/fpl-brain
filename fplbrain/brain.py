@@ -37,6 +37,58 @@ from __future__ import annotations
 
 SEASON_GWS = 38
 
+# --- what this system actually delivers -------------------------------------
+# MEASURED, by season_test.py, walk-forward on 2025/26: build the best legal
+# £100m squad from what was knowable before each gameweek, then score it on what
+# those players really got, blanks included. Sixteen gameweeks.
+#
+#   actual   61.8 per gameweek
+#   expected 67.5 per gameweek   (the model's own projection for the same XI)
+#
+# The 5.7 shortfall is NOT treated as a correction. Its 95% interval is -18.0 to
+# +6.6, so it cannot be distinguished from zero and baking it in would be
+# inventing precision. What IS reliable is the actual figure, and that is what a
+# season target has to be judged against - a projection is what the model hopes
+# for, this is what the hoping was worth.
+#
+# The spread is the important half. 21.2 points of gameweek-to-gameweek standard
+# deviation is enormous next to a 9-point gap to target, which is why a season is
+# far less predictable than a weekly projection makes it look.
+MEASURED_PER_GW = 61.8
+MEASURED_SD_GW = 21.2
+MEASURED_NOTE = "season_test.py, 16 walk-forward gameweeks of 2025/26"
+
+
+def _phi(z):
+    """Standard normal CDF, via erf - no scipy in this project."""
+    import math
+    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+
+
+def outcome(target, points_so_far, gws_left, per_gw=None, sd_gw=MEASURED_SD_GW,
+            chip_points=0.0):
+    """
+    The season as a distribution rather than a single number.
+
+    Gameweek scores vary enormously and independently enough that the total's
+    spread grows with the square root of the weeks left. Quoting one expected
+    total hides that a season is a range hundreds of points wide, and it is the
+    range - not the midpoint - that decides whether an ambitious target is
+    merely unlikely or effectively impossible.
+    """
+    import math
+    per_gw = MEASURED_PER_GW if per_gw is None else per_gw
+    mean = points_so_far + per_gw * gws_left + chip_points
+    sd = sd_gw * math.sqrt(max(0, gws_left))
+    p_hit = 1.0 - _phi((target - mean) / sd) if sd > 0 else float(mean >= target)
+    return dict(
+        expected=round(mean), sd=round(sd),
+        p10=round(mean - 1.2816 * sd), p50=round(mean),
+        p90=round(mean + 1.2816 * sd),
+        p_target=round(p_hit, 4),
+        stretch=round(mean + 1.2816 * sd),   # a good season, not a miracle
+    )
+
 # How far behind the required rate you have to be before the answer changes.
 #
 # Under about a point a gameweek is noise: this model's own backtest puts its
@@ -189,9 +241,26 @@ def levers(p, plan_gain=0.0, chip_gain=0.0, best_gain=0.0):
 
 
 def assess(target, points_so_far, gws_played, projection, best_possible,
-           plan_gain=0.0, chip_gain=0.0, floor=None, ceiling=None):
-    """The whole judgement, in one object the UI can render."""
+           plan_gain=0.0, chip_gain=0.0, floor=None, ceiling=None,
+           measured_per_gw=None):
+    """
+    The whole judgement, in one object the UI can render.
+
+    `projection` is what the model expects this week. It is deliberately NOT
+    what the season forecast is built from - the model's expectation has been
+    measured against reality and came in about six points a gameweek high, on a
+    sample too noisy to correct for but far too suggestive to extrapolate from.
+    The forecast uses measured delivery instead, and the two are shown side by
+    side so the difference is visible rather than quietly resolved.
+    """
     p = pace(target, points_so_far, gws_played, projection)
+    per_gw = MEASURED_PER_GW if measured_per_gw is None else measured_per_gw
+    # scale measured delivery by how this squad compares with the one that was
+    # measured, so a genuinely better or worse team is not given the same forecast
+    if projection > 0:
+        per_gw = per_gw * (projection / 67.5)
+    out = outcome(target, points_so_far, p["gws_left"], per_gw=per_gw,
+                  chip_points=chip_gain)
     post, why, appetite = posture(p["gap"], p["gws_left"])
     reach = reachable(p, best_possible)
     lev = levers(p, plan_gain=plan_gain, chip_gain=chip_gain,
@@ -213,6 +282,23 @@ def assess(target, points_so_far, gws_played, projection, best_possible,
     else:
         headline = "On the rate - no change needed"
 
+    # The honest headline is the probability, not a verdict. "Out of reach" and
+    # "on track" are both wrong when the answer is a distribution: a season sits
+    # hundreds of points wide, so an ambitious target is usually neither certain
+    # nor impossible, just unlikely by a stateable amount.
+    pct = out["p_target"] * 100
+    if pct >= 45:
+        headline = f"{target} is live - about a {pct:.0f}% chance on measured form"
+    elif pct >= 15:
+        headline = f"{target} is a stretch - about {pct:.0f}%, and it needs the variance"
+    elif pct >= 2:
+        headline = f"{target} is unlikely - about {pct:.0f}%. Play for the best finish"
+    else:
+        headline = (f"{target} is out of realistic reach ({pct:.1f}%). "
+                    f"Aim at {out['stretch']}")
+
     return dict(pace=p, posture=post, posture_note=why, ceiling_appetite=appetite,
                 reachable=reach, levers=lev, headline=headline,
+                outcome=out, measured_per_gw=round(per_gw, 2),
+                measured_note=MEASURED_NOTE,
                 floor=floor, ceiling=ceiling)
