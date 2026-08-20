@@ -26,6 +26,7 @@ MODULES = sorted(
 # second copy nobody deploys and left the real app.py untouched.
 OUT = (os.path.join(HERE, "app.py") if os.path.exists(os.path.join(HERE, "app.py"))
        else os.path.join(HERE, "phone", "app.py"))
+OUTDIR = os.path.dirname(OUT)
 
 
 def read(*p):
@@ -172,11 +173,11 @@ with open(OUT, "w", encoding="utf-8") as f:
 
 # --- files that make it a Hugging Face Gradio Space -----------------------
 # fastapi/uvicorn are preinstalled on Hugging Face but not on Render, Koyeb etc.
-with open(os.path.join(HERE, "phone", "requirements.txt"), "w", encoding="utf-8") as f:
+with open(os.path.join(OUTDIR, "requirements.txt"), "w", encoding="utf-8") as f:
     f.write("pulp\nopenpyxl\nfastapi\nuvicorn\n")
 
 # README.md front-matter is how HF configures a Space
-with open(os.path.join(HERE, "phone", "README.md"), "w", encoding="utf-8") as f:
+with open(os.path.join(OUTDIR, "README.md"), "w", encoding="utf-8") as f:
     f.write("""---
 title: FPL Brain
 emoji: "\u26bd"
@@ -191,7 +192,7 @@ Fantasy Premier League squad and transfer advice. Open the Space URL directly.
 """)
 
 # kept for anyone on a paid Docker Space
-with open(os.path.join(HERE, "phone", "Dockerfile"), "w", encoding="utf-8") as f:
+with open(os.path.join(OUTDIR, "Dockerfile"), "w", encoding="utf-8") as f:
     f.write("""FROM python:3.11-slim
 WORKDIR /app
 RUN pip install --no-cache-dir pulp openpyxl fastapi uvicorn
