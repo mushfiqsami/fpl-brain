@@ -129,7 +129,28 @@ CHASE_PER_GW = 3.0
 # Appetite for ceiling over mean, by posture. The middle value is what
 # sim.captain_value uses by default; the others are what it should use when the
 # situation is not neutral.
+#
+# MEASURED, and the result is mostly negative: re-weighting SQUAD SELECTION by
+# these values barely changes anything. Building the best £100m squad at each
+# setting and simulating the result gave 66.19 to 66.62 expected points and a
+# standard deviation of 15.4 to 15.8 - press and hold picked an identical
+# fifteen. The reason is that ceiling and mean are strongly correlated in FPL:
+# players who score heavily have both, so tilting toward one largely re-picks
+# the same names.
+#
+# Where the appetite does bite is the convex decisions - who takes the armband,
+# whether a hit is worth taking, when to spend a chip. Do not expect this dial
+# to reshape a squad, and do not read a changed squad as evidence it worked;
+# most of that movement is the solver breaking near-ties differently.
 CEILING_APPETITE = {"protect": 0.20, "hold": 0.35, "press": 0.50, "chase": 0.70}
+
+# The simulator is calmer than football. A joint simulation of a real XI put
+# gameweek standard deviation at about 15.4; season_test measured 21.2 against
+# actual results. Injuries, rotation, red cards and form swings the model cannot
+# see all widen the real distribution, so season forecasting deliberately uses
+# the measured figure rather than the simulated one - the wider, more pessimistic
+# number is the honest one.
+SIMULATED_SD_GW = 15.4
 
 
 def pace(target, points_so_far, gws_played, projection):
