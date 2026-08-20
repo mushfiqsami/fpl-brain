@@ -1,3 +1,9 @@
 data/
 __pycache__/
 *.pyc
+
+# Scratch copies of the modules unpacked out of app.py's base64 blobs.
+# See CLAUDE.md - app.py is the artifact, these are a working area.
+decoded/
+page.html
+page_js.js
