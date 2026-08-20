@@ -4,7 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## The single most important thing
 
-`app.py` is a **generated single-file bundle**, not hand-written source. Nine Python modules are
+`app.py` is a **generated single-file bundle**, not hand-written source, and as of
+this commit **the source that generates it is in this repo** - `fplbrain/`,
+`ui.html`, `config.json`, `build_standalone.py`.
+
+Edit the source and run `python build_standalone.py`. Do not hand-edit `app.py`:
+the next build silently overwrites it. That is not hypothetical - two sessions
+worked on this project at once, one holding only the bundle and hand-editing it,
+the other holding the source and regenerating. Eight commits of real work came
+within one command of being erased, and had to be recovered by decoding the
+base64 blobs back out of `app.py`. The source lives here now so that cannot
+recur.
+
+Render only ever runs `app.py`; the source sitting beside it is inert, and the
+embedded modules win over the on-disk package because `app.py` registers them in
+`sys.modules` before anything imports. Nine Python modules are
 base64-encoded into the `_SRC` dict at the top of it and `exec`'d into a synthetic `fplbrain`
 package at import time. The UI (HTML/CSS/JS) is base64 in `_UI_B64`, and the preseason player
 prior and default config are base64 in `seed.EMBEDDED_PRIOR` / `EMBEDDED_CONFIG`.
