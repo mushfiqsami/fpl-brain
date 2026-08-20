@@ -191,3 +191,54 @@ stale service worker and a failed deploy look identical.
   history). Nothing may depend on it existing; that is why the prior and config are embedded.
 - The comments in this codebase explain *why*, usually citing the bug that motivated the code.
   Match that when editing — and when a comment explains a trap, check you are not reintroducing it.
+
+## Measured findings — do not re-derive these from intuition
+
+Each was tested, and several contradicted the assumption they were built to
+confirm. Re-measure before overturning any of them; do not re-argue them.
+
+**The model ranks players far better than it times them.** 2025/26, 301 players
+with 8+ scored gameweeks: projection-vs-result correlation is **+0.713 across**
+players and **+0.159 within** a player across his own gameweeks. So two players
+on the same season mean are worth the same in total points whatever the shape of
+their returns, and capturing a peak needs timing the model does not have. Pick on
+season-long quality; do not rotate chasing form. Spikiness also tracks ability —
+in a 3-6 ppg band the spikiest third averaged 4.25 against the steadiest third's
+3.55 — so any steady-versus-explosive comparison that does not hold the mean
+fixed is measuring how good the players are, not the shape of their scoring.
+
+**Chasing ceiling through squad selection does not work.** 20,000 joint
+simulations per setting: protect (0.20 ceiling appetite) returns 66.43 mean at
+15.21 sd; chase (0.70) returns 65.36 at 15.24. Chase costs 1.07 points a
+gameweek (se 0.15) and buys 0.03 of standard deviation. Eleven roughly
+independent scores summed together concentrate, so one player's fat tail is
+averaged away by the other ten — team variance is set by how many players there
+are, not how spiky each is. A lower appetite therefore wins at *every* target:
+protect reaches 2538 8.8% of the time against chase's 5.1%. Ceiling belongs on
+the captain, one score doubled with nothing to average it away. An earlier
+6,000-iteration run said the opposite and was noise.
+
+**Transfer cadence is unpriced.** Spending every 1, 2, 3, 4 or 5 gameweeks
+differed by 2.4 points across GW1-12 — noise. That is not evidence cadence does
+not matter, but that the model cannot see it: projections are treated as
+certain, so waiting buys nothing, when the real reason to bank is optionality
+against news that has not happened yet.
+
+**Autosubs are worth less than they feel.** With a near-nailed XI a substitution
+fires about 0.13 times a week, and a £27m bench produced the same
+10th-percentile week as a £17m one. Pay for a bench for Bench Boost and for
+mid-season injuries the snapshot cannot see, not for weekly rescues.
+
+**The simulator is calmer than football.** A joint simulation of a real XI puts
+gameweek sd near 15.2; measured against actual results it is 21.2. Season
+forecasting uses the measured figure — the wider, more pessimistic one.
+
+**What the system actually delivers.** `season_test.py`, walk-forward on
+2025/26, building the best legal £100m squad from what was knowable before each
+gameweek and scoring it on real results including blanks: **61.8 actual against
+67.5 projected**, over 16 gameweeks. The 5.7 shortfall is NOT applied as a
+correction — its 95% interval is -18.0 to +6.6 and cannot be told apart from
+zero. 61.8 a gameweek is 2,349 over a season.
+
+**Context for any target.** 2025/26 was won with **2538**. A target above that is
+not ambitious, it is beyond what the best of ten million entrants managed.
