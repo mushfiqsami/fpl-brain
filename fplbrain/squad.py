@@ -103,6 +103,44 @@ def sync_push(data):
     threading.Thread(target=go, daemon=True).start()
 
 
+def sync_extra_pull(filename):
+    """
+    Read one more file out of the same gist.
+
+    Calibration is the model's memory of its own errors and it accumulates over
+    a season - which makes it exactly the wrong thing to keep on a disk that is
+    wiped every redeploy. Teams already ride in the gist; this lets anything
+    else that must outlive the filesystem do the same.
+    """
+    token = os.environ.get("FPL_SYNC_TOKEN")
+    if not token:
+        return None
+    try:
+        g = _gh(f"https://api.github.com/gists/{_find_gist(token)}", token)
+        raw = (g.get("files") or {}).get(filename, {}).get("content")
+        return json.loads(raw) if raw else None
+    except Exception:
+        return None
+
+
+def sync_extra_push(filename, data):
+    """Mirror one more file upward, fire-and-forget."""
+    token = os.environ.get("FPL_SYNC_TOKEN")
+    if not token:
+        return
+
+    def go():
+        with _sync_lock:
+            try:
+                _gh(f"https://api.github.com/gists/{_find_gist(token)}", token,
+                    data={"files": {filename: {"content": json.dumps(data)}}},
+                    method="PATCH")
+            except Exception:
+                pass
+
+    threading.Thread(target=go, daemon=True).start()
+
+
 def strip_accents(s: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", str(s))
                    if unicodedata.category(c) != "Mn")

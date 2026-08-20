@@ -34,14 +34,40 @@ def _load(path, default):
     return default
 
 
+GIST_NAME = "fpl_brain_calibration.json"
+
+
 def _save(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=1)
+    if path == CAL_FILE:
+        # What the model has learned is worth more than the disk it sits on.
+        try:
+            from . import squad
+            squad.sync_extra_push(GIST_NAME, obj)
+        except Exception:
+            pass
 
 
 def load_calibration():
+    """
+    Multipliers and the history behind them.
+
+    On a hosted box the file is gone after every redeploy, so an empty local
+    copy usually means the disk was wiped rather than that nothing has been
+    learned. Pull the mirrored copy back before concluding the model is naive.
+    """
     c = _load(CAL_FILE, {})
+    if not c.get("multipliers"):
+        try:
+            from . import squad
+            remote = squad.sync_extra_pull(GIST_NAME)
+            if remote and remote.get("multipliers"):
+                _save(CAL_FILE, remote)
+                c = remote
+        except Exception:
+            pass
     return c.get("multipliers", {"GK": 1.0, "DEF": 1.0, "MID": 1.0, "FWD": 1.0}), c
 
 

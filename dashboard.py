@@ -979,6 +979,48 @@ def compute(force=False, for_team=None):
             mine_h=_horizon_total(list(current), ep, horizon, by_id))
 
     # ------------------------------------------------------------------
+    # Close the self-correction loop.
+    #
+    # calibrate.py scores old predictions against what really happened and
+    # nudges a per-position multiplier, and this file describes that as the
+    # mechanism by which the model learns from the season being played. It has
+    # never run. log_predictions() was only ever called from run.py, so the web
+    # app - the thing actually used every week - recorded nothing, leaving
+    # score_gameweek with no predictions to grade. Every multiplier has sat at
+    # 1.000 since the project started, and the feature existed on paper only.
+    #
+    # Two halves, both needed: write down what was predicted, and grade it once
+    # the gameweek is finished. Neither is allowed to break a run.
+    # ------------------------------------------------------------------
+    try:
+        calibrate.log_predictions(gw, [
+            dict(id=p["id"], name=p["name"], pos=POS_NAME[p["pos"]],
+                 ep=p["ep"], price=p["price"], p_appear=p["p_appear"])
+            for p in pool if p["p_appear"] > 0])
+    except Exception as exc:
+        log(f"Could not log predictions ({exc}).")
+
+    try:
+        already = {h.get("gw") for h in calibrate.calibration_history()}
+        # oldest first, so multipliers move in the order the season happened
+        pending = [e["id"] for e in evs
+                   if e.get("finished") and e["id"] not in already]
+        for target_gw in sorted(pending)[-5:]:
+            live = cl.live(int(target_gw), force=False)
+            actual = {e["id"]: e["stats"]["total_points"] for e in live["elements"]}
+            rep = calibrate.score_gameweek(int(target_gw), actual)
+            if rep.get("error"):
+                continue          # nothing was logged for that week; nothing to learn
+            o = rep.get("overall", {})
+            log(f"Scored GW{target_gw}: {o.get('n', 0)} players, "
+                f"bias {o.get('bias', 0):+.2f}, correlation {o.get('spearman', 0):+.3f}.")
+        mult, _cal_state = calibrate.load_calibration()
+        _cal_hist = calibrate.calibration_history()
+    except Exception as exc:
+        log(f"Auto-calibration skipped ({exc}).")
+    _cal_hist = locals().get("_cal_hist") or []
+
+    # ------------------------------------------------------------------
     # The second unit: hold the goal and judge the maths against it.
     #
     # Everything above is a calculator - it answers the question it was asked
@@ -1063,9 +1105,18 @@ def compute(force=False, for_team=None):
             # count above says
             attack_spread=round(max(ts.attack.values()) - min(ts.attack.values()), 3),
             calibrated=len(mult or {}),
+            # what the model has actually learned, and from how many gameweeks
+            cal_gws=len(_cal_hist),
+            cal_mult=mult,
             sim_runs=runs,
             source=source),
         brain=brain_view,
+        calibration=dict(gws=len(_cal_hist), multipliers=mult,
+                         recent=[dict(gw=h.get("gw"),
+                                      n=(h.get("overall") or {}).get("n"),
+                                      bias=(h.get("overall") or {}).get("bias"),
+                                      spearman=(h.get("overall") or {}).get("spearman"))
+                                 for h in _cal_hist[-6:]]),
         dream=dream, budget_seen=budget_seen, budget_gap=budget_gap, budget_short=budget_short,
         stats=stats[:300], stats_season=(pmeta or {}).get("season", "last season"),
         chips=chips, chip_best=chip_best,
@@ -1089,7 +1140,7 @@ def compute(force=False, for_team=None):
         xi_total_c=round(sum(r["ep"] for r in xi) + (by_id[cap]["ep"] if cap else 0), 2),
         fixtures=fixture_grid, caveats=caveats,
         prior_share=round(ps, 3), games_played=round(sum(ts.games.values()) / max(1, len(ts.games)), 1),
-        seeded=len(pprior), calibration=mult,
+        seeded=len(pprior),
         players_projected=len(pool),
         all_players=sorted(
             [dict(n=p["name"], c=p["club"], p=round(p["price"], 1),
