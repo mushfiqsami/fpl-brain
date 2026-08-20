@@ -130,18 +130,32 @@ CHASE_PER_GW = 3.0
 # sim.captain_value uses by default; the others are what it should use when the
 # situation is not neutral.
 #
-# MEASURED, and the result is mostly negative: re-weighting SQUAD SELECTION by
-# these values barely changes anything. Building the best £100m squad at each
-# setting and simulating the result gave 66.19 to 66.62 expected points and a
-# standard deviation of 15.4 to 15.8 - press and hold picked an identical
-# fifteen. The reason is that ceiling and mean are strongly correlated in FPL:
-# players who score heavily have both, so tilting toward one largely re-picks
-# the same names.
+# MEASURED at 20,000 joint simulations per setting, and the answer is that
+# chasing ceiling through SQUAD SELECTION does not work:
 #
-# Where the appetite does bite is the convex decisions - who takes the armband,
-# whether a hit is worth taking, when to spend a chip. Do not expect this dial
-# to reshape a squad, and do not read a changed squad as evidence it worked;
-# most of that movement is the solver breaking near-ties differently.
+#   protect 0.20   66.43 mean   15.21 sd
+#   hold    0.35   66.08        14.95
+#   press   0.50   65.46        15.17
+#   chase   0.70   65.36        15.24
+#
+# Chase costs 1.07 points a gameweek against protect (se 0.15, so real) and buys
+# 0.03 of standard deviation. It pays the mean and gets nothing back.
+#
+# The reason is arithmetic rather than football. Eleven roughly independent
+# scores added together concentrate: one player's fat tail is averaged away by
+# the other ten, so team variance is set by how many players there are, not by
+# how spiky each one is. Buying ceiling at squad level is the worst of both.
+#
+# It follows that a lower appetite wins at EVERY target, including ambitious
+# ones - protect reaches 2538 8.8% of the time against chase's 5.1%, because
+# the extra mean helps and the missing variance never arrives.
+#
+# The captain is the exception and always was: a single score, doubled, with no
+# other players to average it away. That is exactly where cap_score already
+# weights the tail, and where this dial should be spent instead.
+#
+# An earlier 6,000-iteration run showed the opposite and was reported as fact.
+# It was noise. Do not re-run this at low iteration counts and believe it.
 CEILING_APPETITE = {"protect": 0.20, "hold": 0.35, "press": 0.50, "chase": 0.70}
 
 # The simulator is calmer than football. A joint simulation of a real XI put
