@@ -978,6 +978,42 @@ def compute(force=False, for_team=None):
             proj_h=_horizon_total([p["id"] for p in plan["squad"]], ep, horizon, by_id),
             mine_h=_horizon_total(list(current), ep, horizon, by_id))
 
+    # ------------------------------------------------------------------
+    # The second unit: hold the goal and judge the maths against it.
+    #
+    # Everything above is a calculator - it answers the question it was asked
+    # and has no opinion about whether the season is going anywhere. This reads
+    # the same numbers and says what they mean for the target, including when
+    # the honest answer is that the target has gone.
+    # ------------------------------------------------------------------
+    from fplbrain import brain as brainmod
+    brain_view = None
+    try:
+        finished = [e for e in evs if e.get("finished")]
+        gws_played = len(finished)
+        # entry history if we have it, otherwise nothing banked yet
+        points_so_far = int(cfg.get("points_so_far") or 0)
+        if source == "live" and overall_rank is not None:
+            points_so_far = int((locals().get("ent") or {}).get("summary_overall_points") or
+                                points_so_far)
+        proj_now = round(sum(r["ep"] for r in xi) + (by_id[cap]["ep"] if cap else 0), 2)
+        best_now = (dream or {}).get("proj") or proj_now
+        plan_gain = 0.0
+        if plan_out and plan_out.get("proj_h") and plan_out.get("mine_h"):
+            plan_gain = max(0.0, plan_out["proj_h"] - plan_out["mine_h"])
+        chip_gain = 0.0
+        if chip_best:
+            chip_gain = (chip_best["triple_captain"]["triple_captain"]
+                         + chip_best["bench_boost"]["bench_boost"])
+        brain_view = brainmod.assess(
+            target=int(cfg.get("season_target", 2700)),
+            points_so_far=points_so_far, gws_played=gws_played,
+            projection=proj_now, best_possible=best_now,
+            plan_gain=plan_gain, chip_gain=chip_gain,
+            floor=team_lo, ceiling=team_hi)
+    except Exception as exc:
+        log(f"Strategy view unavailable ({exc}).")
+
     return dict(
         gw=gw, horizon=horizon, deadline=ev.get("deadline_time"),
         entry_name=entry_name, entry_id=eid, overall_rank=overall_rank,
@@ -1029,6 +1065,7 @@ def compute(force=False, for_team=None):
             calibrated=len(mult or {}),
             sim_runs=runs,
             source=source),
+        brain=brain_view,
         dream=dream, budget_seen=budget_seen, budget_gap=budget_gap, budget_short=budget_short,
         stats=stats[:300], stats_season=(pmeta or {}).get("season", "last season"),
         chips=chips, chip_best=chip_best,

@@ -370,6 +370,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
   <!-- ============== THIS WEEK ============== -->
   <div id="t-now">
     <div id="call"></div>
+    <div id="brainbox"></div>
     <div id="dreambox"></div>
     <div id="routebox"></div>
     <div id="chipbox"></div>
@@ -876,7 +877,7 @@ function render(){
   document.getElementById('caveats').innerHTML=(D.caveats||[]).map(c=>
     `<div class="note">${esc(c)}</div>`).join('');
 
-  drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawTeams();drawTeamCards();loadSquad();
+  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawTeams();drawTeamCards();loadSquad();
   document.getElementById('cfg_entry').value=D.entry_id||'';
   fetch('/api/lan').then(r=>r.json()).then(j=>{
     document.getElementById('lanurl').textContent=j.url||'not available';}).catch(()=>{});
@@ -1051,6 +1052,56 @@ function drawHealth(){
       <div class="who"><b>${esc(k)}</b><div class="sub">${esc(note)}</div></div>
       <div class="epcell"><b class="num" style="color:${ok?'var(--mint)':'var(--coral)'}">${esc(v)}</b>
         <s>${ok?'ok':'check'}</s></div></div>`).join('')+'</div>';
+}
+
+
+/* ---------- the brain: the goal, and what the numbers mean for it ---------- */
+function drawBrain(){
+  const box=document.getElementById('brainbox'); if(!box)return;
+  const B=D&&D.brain; if(!B){box.innerHTML='';return;}
+  const p=B.pace, r=B.reachable, l=B.levers;
+  const tone={protect:'var(--turf)',hold:'var(--chalk)',press:'var(--sodium)',chase:'var(--coral)'}[B.posture]||'var(--chalk)';
+  const gapTone=p.gap>0?'var(--coral)':'var(--turf)';
+  box.innerHTML=`<div class="panel"><h2>The plan
+      <span class="tag">target ${p.target}</span></h2>
+    <div class="body">
+      <div class="verdict" style="color:${tone};font-size:22px;margin-bottom:4px">${esc(B.headline)}</div>
+      <p class="note" style="border:none">${esc(B.posture_note)}</p>
+
+      <div class="strip" style="margin:12px 0">
+        <div class="tile"><div class="k">Needed</div>
+          <div class="v"><span class="num">${p.needed.toFixed(2)}</span></div>
+          <div class="s">per gameweek, ${p.gws_left} left</div></div>
+        <div class="tile"><div class="k">Projecting</div>
+          <div class="v"><span class="num">${p.projection.toFixed(2)}</span></div>
+          <div class="s">your squad, per gameweek</div></div>
+        <div class="tile"><div class="k">Gap</div>
+          <div class="v"><span class="num" style="color:${gapTone}">${p.gap>0?'+':''}${p.gap.toFixed(2)}</span></div>
+          <div class="s">${p.gap>0?'behind':'ahead of'} the rate</div></div>
+        <div class="tile"><div class="k">On this pace</div>
+          <div class="v"><span class="num">${p.pace_total}</span></div>
+          <div class="s">${p.shortfall>0?p.shortfall+' short':Math.abs(p.shortfall)+' clear'}</div></div>
+      </div>
+
+      <p class="note" style="border:none;color:${r.verdict==='on'?'var(--dim)':'var(--amber)'}">
+        ${esc(r.note)}</p>
+
+      ${l.items.length?`<div class="sechead">Where the points could come from</div>
+      <div class="plist">${l.items.map(it=>`
+        <div class="prw" style="grid-template-columns:1fr 90px">
+          <div class="who"><b>${esc(it.name)}</b><div class="sub">${esc(it.note)}</div></div>
+          <div class="epcell"><b class="num">+${it.gain.toFixed(0)}</b><s>pts</s></div>
+        </div>`).join('')}</div>
+      <p class="note" style="border:none">Needs <b>${l.need.toFixed(0)}</b> to hit the target;
+        the levers above account for <b>${l.found.toFixed(0)}</b>${
+        l.uncovered>0?`, leaving <b style="color:var(--coral)">${l.uncovered.toFixed(0)}</b>
+        that has to come from beating the projection`:' — enough, if they all land'}.</p>`:''}
+
+      <p class="note" style="border:none">Risk setting this week:
+        <b style="color:${tone}">${esc(B.posture)}</b> — ceiling appetite
+        <b>${B.ceiling_appetite.toFixed(2)}</b> against a neutral 0.35. Higher means prefer the
+        fatter tail when two options are level on average.</p>
+    </div></div>`;
 }
 
 /* ---------- the squad the model would pick ---------- */
