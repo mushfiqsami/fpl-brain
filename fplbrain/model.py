@@ -450,6 +450,11 @@ class PlayerModel:
     place_share: dict = field(default_factory=dict)   # {element_id: share of his club's
                                                       # starting places, see
                                                       # calibrate_depth()}
+    live_is_last_season: bool = True                  # do the live minutes/starts still
+                                                      # describe LAST season? True until
+                                                      # FPL rolls the counters over at the
+                                                      # first deadline. season_phase() in
+                                                      # dashboard.py decides and sets it.
     player_prior: dict = field(default_factory=dict)  # {code: last-season per-90 rates}
     prior_minutes_weight: float = 700.0               # pseudo-minutes of credit given
                                                       # to last season's rates
@@ -496,7 +501,15 @@ class PlayerModel:
         # be averaged. That filter is right for per-90 rates, which are noise at
         # low minutes, and wrong for this question, where low minutes are the
         # entire signal.
-        if starts > 0 or mins > 0:
+        #
+        # `live_is_last_season` is what makes that reading safe, and the caller
+        # must set it. The moment FPL rolls the season over, these same two
+        # fields stop meaning "last season" and start counting from zero - so
+        # dividing by 38 turns a man who has just started the opening fixture
+        # into a 1-in-38 starter. Mid-GW1, counters reset and no result yet
+        # confirmed, that read Saka at 0.03 an hour after he played 67 minutes,
+        # and every projection fell with him.
+        if self.live_is_last_season and (starts > 0 or mins > 0):
             # Uplifted, for the same reason the archive branch below is. A share
             # of 38 counts every week he was hurt as a week he chose not to
             # start, but whether he is fit *now* is already priced separately in
@@ -614,7 +627,12 @@ class PlayerModel:
             left = float(GK_PLACES if is_gk else OUTFIELD_PLACES)
             for rate, avail, p in rated:
                 take = max(0.0, min(rate * avail, left))
-                share[p["id"]] = (take / avail) if avail > 0 else 0.0
+                # Stored conditional on being fit. For someone unavailable today
+                # that is his own rate, NOT zero: he takes no place now, but the
+                # horizon runs five weeks and FLAG_RECOVERY brings him back
+                # inside it. Storing zero here retired an injured player for the
+                # whole window and never let him return.
+                share[p["id"]] = (take / avail) if avail > 0 else rate
                 left -= take
         self.place_share = share
         return share

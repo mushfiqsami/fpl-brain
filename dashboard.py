@@ -106,6 +106,93 @@ def _horizon_total(squad_ids, ep, gws, by_id):
     return round(total, 2)
 
 
+# ---------------------------------------------------------------------------
+# What part of the season are we in?
+#
+# The same two fields on a live element mean completely different things either
+# side of the first deadline. Before it, `minutes` and `starts` are last
+# season's finished totals. The moment FPL rolls over they reset to zero and
+# start counting this season. Code that reads them has to know which it is
+# looking at, and there is no flag in the API that says so - so it is worked out
+# here, once, and handed down.
+#
+# There is also a third state, and it is the one that bites. Between a deadline
+# and the results being confirmed, the counters have reset but almost nothing
+# has been recorded: a man who has just played 67 minutes shows one start, out
+# of a season that has barely begun. Treated as evidence that is a disaster -
+# it read Saka as a 3% starter and dragged the whole projection down with him,
+# which in turn told brain.py the target was hundreds of points out of reach.
+# The honest answer during that window is that the gameweek has not told us
+# anything reliable yet, so keep using what we knew going in.
+#
+# PHASE_OVERRIDES pins the boundaries by hand. Auto-detection from the API is
+# the fallback and is usually right, but it leans on flags FPL sets late and
+# sometimes inconsistently, and being wrong here is expensive. Times are UTC.
+# BDT is UTC+6, so 25 Aug 03:00 BDT is 24 Aug 21:00 UTC.
+# ---------------------------------------------------------------------------
+PHASE_OVERRIDES = {
+    # The first deadline: after this, live counters describe THIS season.
+    "rollover_utc": "2026-08-21T17:30:00Z",
+    # When GW1's results are settled and worth modelling on. Until then the app
+    # stays in note-taking mode rather than rebuilding plans on a half-played
+    # gameweek.
+    "results_final_utc": "2026-08-24T21:00:00Z",
+}
+
+PHASE_PRESEASON = "preseason"
+PHASE_SETTLING = "settling"
+PHASE_UNDERWAY = "underway"
+
+
+def _utc(s):
+    try:
+        return datetime.datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+
+
+def season_phase(events, now=None, overrides=PHASE_OVERRIDES):
+    """
+    ('preseason' | 'settling' | 'underway', human sentence).
+
+      preseason  nothing has kicked off. Live counters are last season's, and
+                 are the best guide to who plays where he is now.
+      settling   a deadline has passed but no gameweek is confirmed finished.
+                 Counters have reset and hold a game or less of noise. Read
+                 nothing into them; keep last season's picture.
+      underway   at least one gameweek is finished and checked. Real data.
+    """
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    roll = _utc((overrides or {}).get("rollover_utc"))
+    final = _utc((overrides or {}).get("results_final_utc"))
+
+    done = [e for e in events if e.get("finished") and e.get("data_checked")]
+    if done:
+        last = max(e["id"] for e in done)
+        return PHASE_UNDERWAY, f"GW{last} is settled - projections run on this season's data."
+
+    if roll is not None:
+        started = now >= roll
+    else:
+        started = any(e.get("is_current") or e.get("finished") for e in events)
+        for e in events:
+            d = _utc(e.get("deadline_time"))
+            if d and now >= d:
+                started = True
+                break
+    if not started:
+        return PHASE_PRESEASON, "Season has not started - built from last season's record."
+
+    if final is not None and now < final:
+        when = final.strftime("%d %b %H:%M UTC")
+        return PHASE_SETTLING, (
+            f"GW1 is being played. Nothing is settled until {when}, so the model is "
+            "taking notes, not rebuilding - projections still stand on last season.")
+    return PHASE_SETTLING, ("A gameweek is under way but no result is confirmed, so the "
+                            "model is holding last season's picture rather than reading "
+                            "a part-played week as evidence.")
+
+
 def free_rein(events, gw):
     """
     True while the squad can still be rebuilt for free.
@@ -183,7 +270,12 @@ def compute(force=False, for_team=None):
     fm = FixtureModel(ts, float(cfg.get("home_multiplier", 1.10)),
                       float(cfg.get("away_multiplier", 0.90)))
     mult, _ = calibrate.load_calibration()
-    pm = PlayerModel(ts, fm, calibration=mult, player_prior=pprior)
+    # Which season the live minutes/starts belong to decides how they may be
+    # read at all, so it is settled before the model is built.
+    phase, phase_note = season_phase(evs)
+    log(phase_note)
+    pm = PlayerModel(ts, fm, calibration=mult, player_prior=pprior,
+                     live_is_last_season=(phase == PHASE_PRESEASON))
     # Only one keeper per club can play, so their start probabilities have to be
     # shared out rather than assessed one at a time. Without this a club's second
     # and third keepers project as starters too, and the cheap one looks like a
@@ -891,6 +983,7 @@ def compute(force=False, for_team=None):
     budget_short = bool(source == "manual" and budget_gap >= 0.5)
 
     caveats = []
+    caveats.append(phase_note)
     if ts.unmatched_priors:
         caveats.append("No baseline matched for: " + ", ".join(ts.unmatched_priors)
                        + ". Treated as league-average.")
@@ -1061,6 +1154,7 @@ def compute(force=False, for_team=None):
         entry_name=entry_name, entry_id=eid, overall_rank=overall_rank,
         squad_source=source, bank=round(bank, 1), squad_value=round(squad_value, 1),
         squad_problems=squad_problems,
+        phase=phase, phase_note=phase_note,
         squad_resolved=squad_resolved,
         my_squad=(mysq["players"] if mysq else None),
         team_cards=team_cards,
