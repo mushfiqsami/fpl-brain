@@ -1114,6 +1114,74 @@ def compute(force=False, for_team=None):
     _cal_hist = locals().get("_cal_hist") or []
 
     # ------------------------------------------------------------------
+    # Note-taking: what actually happened against what was expected.
+    #
+    # While a gameweek is being played the model must not rebuild plans on it
+    # (see season_phase), but the matches are still information and discarding
+    # them is its own blindness. So they are recorded and reported, and nothing
+    # here feeds back into the projection - calibrate.py owns that loop, slowly
+    # and with a minimum sample, so one loud week cannot move the model.
+    # ------------------------------------------------------------------
+    from fplbrain import form as formmod
+    noting = None
+    try:
+        # The week worth noting is the one in play, or the last one finished -
+        # NOT `gw`, which by now points at the next deadline.
+        note_gw = next((e["id"] for e in evs if e.get("is_current")), None)
+        if note_gw is None:
+            done_ids = [e["id"] for e in evs if e.get("finished")]
+            note_gw = max(done_ids) if done_ids else None
+        if note_gw:
+            live_rows = cl.live(int(note_gw), force=False)["elements"]
+            actual = {e["id"]: e["stats"] for e in live_rows}
+            # Project that gameweek fresh rather than trusting a logged run: on
+            # an ephemeral host there may be no log, and a squad edit since then
+            # would have made it stale anyway.
+            note_views = fm.team_view(fx, int(note_gw))
+            rows = []
+            for p in pool:
+                st = actual.get(p["id"])
+                if not st:
+                    continue
+                mins = int(st.get("minutes") or 0)
+                # Everyone you own, plus anyone who actually did something.
+                if p["id"] not in current and mins == 0:
+                    continue
+                if p["id"] not in current and float(st.get("total_points") or 0) < 6:
+                    continue
+                proj = pm.project(p["element"], note_views.get(p["club_id"], []))["ep"]
+                rows.append(dict(
+                    id=p["id"], name=p["name"], club=p["club"], pos=POS_NAME[p["pos"]],
+                    price=round(p["price"], 1), owned=(p["id"] in current),
+                    projected=proj, actual=float(st.get("total_points") or 0),
+                    minutes=mins,
+                    goals=int(st.get("goals_scored") or 0),
+                    assists=int(st.get("assists") or 0),
+                    bonus=int(st.get("bonus") or 0)))
+            graded = formmod.note_players(rows)
+            swing = formmod.peaking({p["id"]: [ep[p["id"]][g] for g in horizon]
+                                     for p in pool if p["id"] in ep})
+            hot = sorted((p for p in pool
+                          if p["p_appear"] >= 0.5 and swing.get(p["id"], 0) > 0.35),
+                         key=lambda p: -swing[p["id"]])[:12]
+            noting = dict(
+                gw=note_gw,
+                settled=bool(next((e.get("finished") and e.get("data_checked")
+                                   for e in evs if e["id"] == note_gw), False)),
+                players=graded,
+                mine=[r for r in graded if r["owned"]],
+                comebacks=formmod.comebacks(bs["elements"], pm.availability,
+                                            len(horizon))[:12],
+                peaking=[dict(id=p["id"], name=p["name"], club=p["club"],
+                              pos=POS_NAME[p["pos"]], price=round(p["price"], 1),
+                              swing=swing[p["id"]],
+                              ep5=round(sum(ep[p["id"]][g] for g in horizon), 2))
+                         for p in hot])
+            log(f"Noted GW{note_gw}: {len(graded)} players measured against projection.")
+    except Exception as exc:
+        log(f"Could not take notes on the gameweek ({exc}).")
+
+    # ------------------------------------------------------------------
     # The second unit: hold the goal and judge the maths against it.
     #
     # Everything above is a calculator - it answers the question it was asked
@@ -1154,7 +1222,7 @@ def compute(force=False, for_team=None):
         entry_name=entry_name, entry_id=eid, overall_rank=overall_rank,
         squad_source=source, bank=round(bank, 1), squad_value=round(squad_value, 1),
         squad_problems=squad_problems,
-        phase=phase, phase_note=phase_note,
+        phase=phase, phase_note=phase_note, noting=noting,
         squad_resolved=squad_resolved,
         my_squad=(mysq["players"] if mysq else None),
         team_cards=team_cards,

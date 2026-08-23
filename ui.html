@@ -753,7 +753,48 @@ function render(){
 
   /* ---- the call ---- */
   const c=document.getElementById('call');
-  if(D.squad_source==='none'){
+  /* While a gameweek is being played nothing is settled, so the hero panel stops
+     issuing instructions and reports what is happening instead. Acting on a
+     part-played week is how you take a hit on a player who has already blanked. */
+  if(D.phase==='settling'&&D.noting){
+    const N=D.noting, mine=N.mine||[];
+    const shine=mine.filter(r=>r.band==='shining').slice(0,6);
+    const strug=mine.filter(r=>r.band==='struggling').slice(0,6);
+    const unused=mine.filter(r=>r.band==='unused');
+    const row=r=>`<div class="frow" style="justify-content:space-between;gap:10px;
+        padding:5px 0;border-bottom:1px solid rgba(38,49,79,.5)">
+      <div><b>${esc(r.name)}</b> <s style="color:var(--dim);font-size:11px">${esc(r.club)} ${esc(r.pos)}</s></div>
+      <div class="num" style="white-space:nowrap">
+        <s style="color:var(--dim);font-size:11px">exp ${r.projected.toFixed(1)}</s>
+        <b style="margin-left:7px">${r.actual.toFixed(0)}</b>
+        <s style="margin-left:7px;color:${r.delta>=0?'var(--mint)':'var(--coral)'}">${r.delta>=0?'+':''}${r.delta.toFixed(1)}</s>
+      </div></div>`;
+    c.innerHTML=`<div class="call"><div class="top"><span class="eyebrow">Noting, not acting</span></div>
+      <div class="verdict hold">GW${N.gw} is being played</div>
+      <div class="why">${esc(D.phase_note||'')} Below is how your squad is doing against what the
+        model expected of it — the record, not a recommendation.</div>
+      <div style="margin-top:12px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+        <div><div class="eyebrow" style="color:var(--mint)">Shining</div>
+          ${shine.length?shine.map(row).join(''):'<div class="note" style="border:none">Nobody has beaten expectation yet.</div>'}</div>
+        <div><div class="eyebrow" style="color:var(--coral)">Struggling</div>
+          ${strug.length?strug.map(row).join(''):'<div class="note" style="border:none">Nobody has fallen notably short.</div>'}</div>
+      </div>
+      ${unused.length?`<div class="note" style="margin-top:10px">Not used yet:
+        ${unused.map(r=>esc(r.name)).join(', ')}</div>`:''}
+      ${(N.comebacks||[]).length?`<div style="margin-top:12px">
+        <div class="eyebrow">Due back</div>${N.comebacks.slice(0,5).map(r=>
+        `<div class="note" style="border:none;padding:3px 0"><b>${esc(r.name)}</b>
+          <s style="color:var(--dim)"> ${r.now===0?'out now':(r.now*100).toFixed(0)+'% now'} →
+          ${(r.later*100).toFixed(0)}% by GW${(D.horizon||[]).slice(-1)[0]||''}${r.news?' · '+esc(r.news):''}</s></div>`).join('')}</div>`:''}
+      ${(N.peaking||[]).length?`<div style="margin-top:12px">
+        <div class="eyebrow">Fixtures turning now</div>${N.peaking.slice(0,6).map(r=>
+        `<div class="note" style="border:none;padding:3px 0"><b>${esc(r.name)}</b>
+          <s style="color:var(--dim)"> ${esc(r.club)} ${esc(r.pos)} · £${r.price}m ·
+          next two are +${r.swing.toFixed(2)} a week better than the rest</s></div>`).join('')}</div>`:''}
+      <div class="note" style="margin-top:12px;border:none">Transfer advice resumes once the
+        gameweek is settled. The Targets and Route tabs still work if you want to look ahead.</div>
+    </div>`;
+  }else if(D.squad_source==='none'){
     c.innerHTML=`<div class="call"><div class="top"><span class="eyebrow">Starting point</span></div>
       <div class="verdict hold">Best possible squad</div>
       <div class="why">This isn't advice on your team yet — it's the strongest £100m squad the
