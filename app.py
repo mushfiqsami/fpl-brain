@@ -97,7 +97,7 @@ CONFIG = os.path.join(HERE, "config.json")
 # from the page itself, whether the thing you are looking at is the thing that
 # was last published - a stale service worker or a deploy that never finished
 # otherwise look exactly like a model that is ignoring you.
-BUILD = "6365b1b · 25 Aug 14:54"
+BUILD = "104bcd3 · 25 Aug 15:07"
 
 # ---------------------------------------------------------------------------
 # ZeroGPU compatibility.
@@ -324,10 +324,21 @@ def resolve_team(t, elements, teams, cl, gw, force=False):
             e = by_id.get(p["element"])
             if not e:
                 continue
+            # The public picks endpoint only carries selling_price/purchase_price
+            # for the CURRENT gameweek's squad, not a past one - so a squad
+            # pulled the week after its deadline (exactly when this is normally
+            # called) gets neither field. Silently defaulting that to 0 told the
+            # transfer planner every player was worth nothing sold, which priced
+            # every transfer as unaffordable and made it recommend nothing at
+            # all. now_cost is what the player actually sells for absent a
+            # price change since the pick was made, which is the common case in
+            # the first few gameweeks of a season and the only information
+            # available without asking the account holder to log in.
+            raw_sell = p.get("selling_price") or p.get("purchase_price")
             resolved.append(dict(
                 name=e.get("web_name"), club=short.get(e["team"], ""), role=None,
                 id=e["id"], price=e["now_cost"] / 10.0,
-                sell=p.get("selling_price", p.get("purchase_price", 0)) / 10.0,
+                sell=(raw_sell / 10.0) if raw_sell else e["now_cost"] / 10.0,
                 matched_name=e.get("web_name"), matched_club=short.get(e["team"], ""),
                 pos=e.get("element_type"), exact=True,
                 live_entry_name=ent.get("name"),
@@ -510,8 +521,16 @@ def compute(force=False, for_team=None):
             entry_name = ent.get("name")
             overall_rank = ent.get("summary_overall_rank")
             picks = cl.entry_picks(int(eid), max(1, gw - 1), force=force)
+            by_id_live = {e["id"]: e for e in bs["elements"]}
             for p in picks["picks"]:
-                sp = p.get("selling_price", p.get("purchase_price", 0)) / 10.0
+                # See resolve_team()'s identical fallback: the picks endpoint
+                # only carries a sell price for the current gameweek, so a squad
+                # fetched the week after its deadline needs now_cost instead of
+                # silently pricing every player at 0.
+                raw_sell = p.get("selling_price") or p.get("purchase_price")
+                e_live = by_id_live.get(p["element"])
+                sp = (raw_sell / 10.0) if raw_sell else (
+                    e_live["now_cost"] / 10.0 if e_live else 0.0)
                 sell[p["element"]] = sp
                 current[p["element"]] = sp
             eh = picks.get("entry_history", {})
