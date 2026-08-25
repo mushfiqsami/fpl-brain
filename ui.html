@@ -302,6 +302,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 .sqecho{font:500 11.5px/1.5 var(--sans);margin-top:4px;padding-left:2px}
 .sqtot{margin-top:12px;padding:10px 12px;border-radius:10px;background:#141B2E;
   border:1px solid #232C47}
+.sq-manual.sq-synced{opacity:.35;pointer-events:none;filter:grayscale(.4)}
 @media(max-width:620px){.sqrow{grid-template-columns:18px 1fr;padding:6px}}
 .sechead{margin:16px 0 7px;font:700 9.5px/1 var(--sans);letter-spacing:.14em;
   text-transform:uppercase;color:var(--dim)}
@@ -443,12 +444,21 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     </div></div>
     <div class="panel"><h2 id="sqhead">Your 15</h2><div class="body">
       <div class="field"><label>Team name</label><input id="sq_name" placeholder="Main team"></div>
-      <p class="note" style="border:none">Type a surname, pick from the list. FPL doesn't publish
-        picks until after the first deadline, so this is how the app knows your real team.</p>
-      <div id="sqedit"></div>
+      <div class="field">
+        <label>FPL Team ID <s style="color:var(--dim);font-weight:400">(optional — syncs automatically)</s></label>
+        <input id="sq_entry_id" placeholder="e.g. 1234567" inputmode="numeric"
+          oninput="sqEntrySync()">
+      </div>
+      <p class="note" style="border:none" id="sq_entry_note">Find it in the URL of your points page:
+        fantasy.premierleague.com/entry/<b>XXXXXX</b>/event/1. Set this once and every future
+        transfer, captain change or price move you make in the official app is picked up here
+        automatically — nothing below needs typing or re-typing. Leave it blank to keep entering
+        your 15 by hand instead.</p>
+      <div id="sqedit" class="sq-manual"></div>
       <div id="sqtotals" class="sqtot"></div>
       <div class="frow" style="margin-top:14px">
-        <div class="field"><label>Bank £m</label><input id="sq_bank" type="number" step="0.1" value="0" oninput="sqTotals()"></div>
+        <div class="field"><label>Bank £m <s id="sq_bank_lbl" style="color:var(--dim);font-weight:400"></s></label>
+          <input id="sq_bank" type="number" step="0.1" value="0" oninput="sqTotals()"></div>
         <div class="field"><label>Free transfers</label><input id="sq_ft" type="number" min="1" max="5" value="1"></div>
       </div>
       <div class="field" style="margin-top:4px">
@@ -964,6 +974,7 @@ function drawTeamCards(){
     return `<div class="prw" style="grid-template-columns:1fr 116px 74px auto;${
       c.active?'background:rgba(242,169,59,.06)':''}">
       <div class="who"><b>${esc(c.name)}</b>${c.active?'<span class="pill pen">OPEN</span>':''}
+        ${c.synced?'<span class="pill" style="background:rgba(94,209,138,.15);color:var(--mint)" title="Synced live from the official FPL app">SYNCED</span>':''}
         <div class="sub">£${c.value}m squad · £${c.bank}m bank · ${c.free_transfers} FT ·
           C: ${esc(c.captain)}</div>
         ${c.risk?`<span class="flagline">${c.risk} player${c.risk>1?'s':''} at start risk</span>`:''}
@@ -1437,6 +1448,9 @@ async function loadSquad(){
   if(hd)hd.textContent=(d.name||'My team')+' — 15 players';
   document.getElementById('sq_bank').value=d.bank??0;
   document.getElementById('sq_ft').value=d.free_transfers??1;
+  const eidEl=document.getElementById('sq_entry_id');
+  if(eidEl)eidEl.value=d.entry_id||'';
+  sqEntrySync();
   try{ALLP=await fetch('/api/players').then(r=>r.json());}catch(e){ALLP=[];}
   /* Slot-indexed view of what the model resolved each row to, so every row can
      show the match that is actually being used rather than a second opinion. */
@@ -1548,6 +1562,11 @@ function sqClear(i){
 /* Running cost and legality, live, instead of after a save. */
 function sqTotals(){
   const box=document.getElementById('sqtotals'); if(!box)return;
+  if(((document.getElementById('sq_entry_id')||{}).value||'').trim()){
+    box.innerHTML='<div class="note" style="border:none">Squad, price and budget come from '
+      +'the synced FPL team — nothing to check here.</div>';
+    return;
+  }
   let cost=0,filled=0,clubs={},bad=0;
   for(let i=0;i<15;i++){
     const ni=document.getElementById('sq_n'+i),ci=document.getElementById('sq_c'+i);
@@ -1571,7 +1590,31 @@ function sqTotals(){
     ${tot>100.05?'<div style="color:var(--coral)">over the £100m budget</div>':''}
   </div>`;
 }
+/* A team with an FPL Team ID is synced from the official API on every run, so
+   the 15 manual boxes are dead weight for it - greyed out and skipped by save
+   rather than left demanding 15 rows nobody needs to type any more. */
+function sqEntrySync(){
+  const eid=(document.getElementById('sq_entry_id')||{}).value||'';
+  const on=eid.trim().length>0;
+  const box=document.getElementById('sqedit');
+  if(box)box.classList.toggle('sq-synced',on);
+  const note=document.getElementById('sq_entry_note');
+  if(note)note.innerHTML=on
+    ?'Syncing from FPL Team <b>'+esc(eid.trim())+'</b>. Every change you make in the official '
+     +'app — transfers, captain, chip — is picked up automatically on the next refresh. The 15 '
+     +'boxes below are ignored while this is set; clear it to go back to typing your squad by hand.'
+    :'Find it in the URL of your points page: fantasy.premierleague.com/entry/<b>XXXXXX</b>/event/1. '
+     +'Set this once and every future transfer, captain change or price move you make in the '
+     +'official app is picked up here automatically — nothing below needs typing or re-typing. '
+     +'Leave it blank to keep entering your 15 by hand instead.';
+  const bl=document.getElementById('sq_bank_lbl');
+  if(bl)bl.textContent=on?'(from FPL, read-only while synced)':'';
+  const bankEl=document.getElementById('sq_bank');
+  if(bankEl)bankEl.disabled=on;
+  sqTotals();
+}
 async function saveSquad(){
+  const eid=((document.getElementById('sq_entry_id')||{}).value||'').trim();
   const players=[];
   for(let i=0;i<15;i++){
     const ni=document.getElementById('sq_n'+i),ci=document.getElementById('sq_c'+i);
@@ -1582,19 +1625,22 @@ async function saveSquad(){
     const ri=document.getElementById('sq_r'+i);
     if(n)players.push({name:n,club:c,role:(ri&&ri.value)||''});
   }
-  if(players.length<15){
-    document.getElementById('sqmsg').textContent='Need all 15 — you have '+players.length+'.';return;}
-  const starts=players.filter(p=>p.role==='start').length;
-  const benched=players.filter(p=>p.role==='bench').length;
-  if(starts>11){
-    document.getElementById('sqmsg').textContent=
-      'You have pinned '+starts+' players to Start. Only 11 can play.';return;}
-  if(benched>4){
-    document.getElementById('sqmsg').textContent=
-      'You have pinned '+benched+' players to Bench. Only 4 sit out.';return;}
-  document.getElementById('sqmsg').textContent='Saving…';
+  if(!eid){
+    if(players.length<15){
+      document.getElementById('sqmsg').textContent='Need all 15 — you have '+players.length+'.';return;}
+    const starts=players.filter(p=>p.role==='start').length;
+    const benched=players.filter(p=>p.role==='bench').length;
+    if(starts>11){
+      document.getElementById('sqmsg').textContent=
+        'You have pinned '+starts+' players to Start. Only 11 can play.';return;}
+    if(benched>4){
+      document.getElementById('sqmsg').textContent=
+        'You have pinned '+benched+' players to Bench. Only 4 sit out.';return;}
+  }
+  document.getElementById('sqmsg').textContent=eid?'Saving and syncing…':'Saving…';
   await fetch('/api/squad',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({players,bank:parseFloat(document.getElementById('sq_bank').value)||0,
+    body:JSON.stringify({players,entry_id:eid,
+      bank:parseFloat(document.getElementById('sq_bank').value)||0,
       free_transfers:parseInt(document.getElementById('sq_ft').value)||1,
       team_id:D&&D.active_team?D.active_team:null,
       formation:(document.getElementById('sq_formation')||{}).value||'auto',

@@ -246,20 +246,31 @@ def set_active(team_id):
 
 
 def upsert_team(team_id, name, players, bank=0.0, free_transfers=1, make_active=True,
-                formation=None):
+                formation=None, entry_id=None):
     """
     formation: "4-4-2" etc, or "auto" to let the model pick the shape. None means
     "leave it alone" - callers like rename must not silently reset it.
     Each player may carry role="start"/"bench" to pin them into or out of the XI.
+
+    entry_id: the team's numeric FPL id (visible in the URL of its points page),
+    or "" to explicitly clear it back to manual entry. None means "leave it
+    alone", same convention as formation - a save that does not mention it must
+    not silently unlink a team that was already syncing. When set, resolve_team()
+    below pulls this team's real picks from the FPL API on every run instead of
+    matching the typed name/club rows, which is the whole point of setting it:
+    one edit in the official app is what future runs then see, not a second
+    typed copy that can drift out of sync with it.
     """
     d = load_all()
     players = [p for p in (players or []) if (p.get("name") or "").strip()]
     if team_id:
         for t in d["teams"]:
             if t["id"] == team_id:
+                eid = t.get("entry_id") if entry_id is None else (entry_id or None)
                 t.update(name=name or t.get("name") or "My team", players=players,
                          bank=float(bank), free_transfers=int(free_transfers),
-                         formation=formation or t.get("formation") or "auto")
+                         formation=formation or t.get("formation") or "auto",
+                         entry_id=eid)
                 break
         else:
             team_id = None
@@ -268,7 +279,8 @@ def upsert_team(team_id, name, players, bank=0.0, free_transfers=1, make_active=
         d["teams"].append(dict(id=team_id, name=name or f"Team {len(d['teams']) + 1}",
                                players=players, bank=float(bank),
                                free_transfers=int(free_transfers),
-                               formation=formation or "auto"))
+                               formation=formation or "auto",
+                               entry_id=(entry_id or None)))
     if make_active or not d.get("active"):
         d["active"] = team_id
     _write(TEAMS_FILE, d)
@@ -287,12 +299,16 @@ def restore_all(data):
     teams = []
     for t in (data or {}).get("teams") or []:
         players = [p for p in (t.get("players") or []) if (p.get("name") or "").strip()]
-        if not players:
+        entry_id = t.get("entry_id") or None
+        # A live-synced team legitimately has no typed rows - only a team with
+        # neither is actually empty and worth dropping from the restore.
+        if not players and not entry_id:
             continue
         teams.append(dict(id=t.get("id") or _new_id(teams), name=t.get("name") or "Team",
                           players=players, bank=float(t.get("bank", 0.0)),
                           free_transfers=int(t.get("free_transfers", 1)),
-                          formation=t.get("formation") or "auto"))
+                          formation=t.get("formation") or "auto",
+                          entry_id=entry_id))
     if not teams:
         return load_all()
     ids = [t["id"] for t in teams]
@@ -363,11 +379,14 @@ def duplicate_team(team_id):
 def load():
     """Backwards-compatible: the active team in the old single-squad shape."""
     t = get_active()
-    if not t or not t.get("players"):
+    # A team synced by entry_id has no reason to carry typed players too, so
+    # "nothing typed" must not mean "nothing to load" once entry_id is set.
+    if not t or not (t.get("players") or t.get("entry_id")):
         return None
-    return dict(players=t["players"], bank=t.get("bank", 0.0),
+    return dict(players=t.get("players") or [], bank=t.get("bank", 0.0),
                 free_transfers=t.get("free_transfers", 1),
                 formation=t.get("formation") or "auto",
+                entry_id=t.get("entry_id"),
                 name=t.get("name"), id=t.get("id"))
 
 
@@ -380,10 +399,11 @@ def load_one(team_id):
     if not team_id:
         return load()
     for t in load_all()["teams"]:
-        if t["id"] == team_id and t.get("players"):
-            return dict(players=t["players"], bank=t.get("bank", 0.0),
+        if t["id"] == team_id and (t.get("players") or t.get("entry_id")):
+            return dict(players=t.get("players") or [], bank=t.get("bank", 0.0),
                         free_transfers=t.get("free_transfers", 1),
                         formation=t.get("formation") or "auto",
+                        entry_id=t.get("entry_id"),
                         name=t.get("name"), id=t.get("id"))
     return None
 

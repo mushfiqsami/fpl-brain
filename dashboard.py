@@ -208,6 +208,72 @@ def season_phase(events, fixtures=(), now=None, overrides=PHASE_OVERRIDES):
                             "part-played week as evidence.")
 
 
+# ---------------------------------------------------------------------------
+# One team, kept in sync with the official app instead of typed twice.
+#
+# The public FPL API exposes a team's picks with no login - only its numeric
+# id, which is right there in the URL of its own points page. Setting that id
+# once on a stored team was already how the SINGLE team named in config.json
+# worked; this is the same mechanism made available per team, for however many
+# of them you actually run, so a transfer made in the real app is what every
+# later run here sees too, with nothing to re-type and nothing that can drift.
+# ---------------------------------------------------------------------------
+def resolve_team(t, elements, teams, cl, gw, force=False):
+    """
+    (resolved, problems, source) for one stored team.
+
+    resolved is the same shape squad.resolve() returns, so every caller that
+    already consumes that shape - the transfer planner, the team-card summary,
+    the squad editor's confirmation - needs no separate code path for a team
+    synced this way versus one typed by hand.
+
+    Falls back to the typed players on any failure (before the first deadline,
+    a network hiccup, a wrong id) rather than reporting the team as empty -
+    a team with real typed players is still usable advice even when the live
+    pull briefly is not.
+    """
+    from fplbrain import squad as squadmod
+    eid = t.get("entry_id")
+    if not eid:
+        return (*squadmod.resolve(t.get("players") or [], elements, teams), "manual")
+    try:
+        ent = cl.entry(int(eid), force=force)
+        picks = cl.entry_picks(int(eid), max(1, gw - 1), force=force)
+        by_id = {e["id"]: e for e in elements}
+        short = {tm["id"]: tm.get("short_name", "") for tm in teams}
+        resolved = []
+        for p in picks["picks"]:
+            e = by_id.get(p["element"])
+            if not e:
+                continue
+            resolved.append(dict(
+                name=e.get("web_name"), club=short.get(e["team"], ""), role=None,
+                id=e["id"], price=e["now_cost"] / 10.0,
+                sell=p.get("selling_price", p.get("purchase_price", 0)) / 10.0,
+                matched_name=e.get("web_name"), matched_club=short.get(e["team"], ""),
+                pos=e.get("element_type"), exact=True,
+                live_entry_name=ent.get("name"),
+                live_bank=picks.get("entry_history", {}).get("bank", 0) / 10.0,
+                live_value=picks.get("entry_history", {}).get("value", 0) / 10.0,
+                live_rank=ent.get("summary_overall_rank"),
+                live_points=ent.get("summary_overall_points")))
+        return resolved, [], "live"
+    except Exception as exc:
+        res, probs = squadmod.resolve(t.get("players") or [], elements, teams)
+        if t.get("players"):
+            probs = probs + [dict(
+                name=None, club=None,
+                reason=(f"Could not load the synced team ({exc}) - showing the last typed "
+                        "copy instead. Before the first deadline of the season a team's "
+                        "picks are not published yet; that is normal, not an error."))]
+        else:
+            probs = probs + [dict(
+                name=None, club=None,
+                reason=(f"Could not load the synced team ({exc}), and there is no typed "
+                        "copy to fall back to."))]
+        return res, probs, "manual"
+
+
 def free_rein(events, gw):
     """
     True while the squad can still be rebuilt for free.
@@ -299,28 +365,30 @@ def compute(force=False, for_team=None):
     views = {g: fm.team_view(fx, g) for g in span}
 
     # --- your squad -------------------------------------------------------
-    eid = cfg.get("entry_id")
     sell, current, bank, ft, entry_name, squad_value = {}, {}, 0.0, 1, None, 0.0
     overall_rank = None
+    live_points_so_far = None
     source = "none"
     squad_error = None
     squad_problems = []
 
-    # 1st preference: the squad you typed in. FPL does not publish picks until
-    # after the first deadline, so this is the only way to get real advice now.
+    # 1st preference: a team with an entry_id syncs from the official FPL API;
+    # otherwise fall back to whatever was typed into My Squad. FPL does not
+    # publish a team's picks until the first deadline, so before that manual
+    # entry is the only way to get real advice regardless of which this is.
     all_teams = squadmod.load_all()
     mysq = squadmod.load_one(for_team) if for_team else squadmod.load()
     formation = "auto"
     force_start, force_bench = set(), set()
-    # What the server actually resolved each typed row to. The squad editor used
-    # to answer that question with its own separate matcher written in the page,
-    # which scores differently and knows nothing about which players are already
-    # spoken for - so it could confirm one player under a row while the model
-    # was scoring a different one entirely, and the squad appeared to contain
-    # somebody who was never typed. One matcher, and the editor shows its answer.
+    # What the server actually resolved each row to - live pick or typed row.
+    # The squad editor used to answer that question with its own separate
+    # matcher written in the page, which scores differently and knows nothing
+    # about which players are already spoken for - so it could confirm one
+    # player under a row while the model was scoring a different one entirely.
+    # One resolver, and the editor shows its answer.
     squad_resolved = []
     if mysq:
-        res, squad_problems = squadmod.resolve(mysq["players"], bs["elements"], bs["teams"])
+        res, squad_problems, res_source = resolve_team(mysq, bs["elements"], bs["teams"], cl, gw, force=force)
         squad_resolved = [dict(slot=r.get("slot"), typed=r.get("name"),
                                typed_club=r.get("club"), id=r["id"],
                                name=r["matched_name"], club=r["matched_club"],
@@ -336,18 +404,28 @@ def compute(force=False, for_team=None):
                     force_start.add(r["id"])
                 elif r.get("role") == "bench":
                     force_bench.add(r["id"])
-            bank = float(mysq.get("bank", 0.0))
-            ft = int(mysq.get("free_transfers", 1))
-            squad_value = round(sum(r["price"] for r in res[:15]), 1)
-            entry_name = mysq.get("name") or "My squad"
-            source = "manual"
-            log(f"Using your saved squad — {len(res)} players matched.")
+            live_bit = res[0] if res_source == "live" else {}
+            bank = float(live_bit.get("live_bank", mysq.get("bank", 0.0)))
+            ft = (min(5, max(1, int(cfg.get("free_transfers_override") or 1)))
+                  if res_source == "live" else int(mysq.get("free_transfers", 1)))
+            squad_value = round(live_bit.get("live_value") or
+                                sum(r["price"] for r in res[:15]), 1)
+            entry_name = live_bit.get("live_entry_name") or mysq.get("name") or "My squad"
+            source = res_source
+            overall_rank = live_bit.get("live_rank")
+            live_points_so_far = live_bit.get("live_points")
+            log(f"{'Synced' if res_source == 'live' else 'Using'} '{entry_name}' — "
+                f"{len(res)} players matched.")
         elif res:
             squad_error = (f"Only {len(res)} of 15 players matched. Open the My Squad "
                            "tab and fix the ones flagged in red.")
             log(squad_error)
 
-    if eid and source != "manual":
+    # Legacy fallback: a global entry_id in config.json, for anyone still using
+    # the pre-per-team mechanism and whose active team has not been given its
+    # own entry_id. New teams should set entry_id on the team itself instead.
+    eid = cfg.get("entry_id")
+    if eid and source == "none":
         try:
             log(f"Loading your team ({eid})...")
             ent = cl.entry(int(eid), force=force)
@@ -684,13 +762,15 @@ def compute(force=False, for_team=None):
     team_cards = []
     all_sets = {}
     for t in all_teams["teams"]:
-        res, probs = squadmod.resolve(t.get("players") or [], bs["elements"], bs["teams"])
+        res, probs, t_source = resolve_team(t, bs["elements"], bs["teams"], cl, gw, force=False)
         ids = [r["id"] for r in res][:15]
         all_sets[t["id"]] = set(ids)
+        t_live = res[0] if (res and t_source == "live") else {}
+        t_bank = t_live.get("live_bank", t.get("bank", 0.0))
         if len(ids) < 11:
-            team_cards.append(dict(id=t["id"], name=t.get("name") or "Team",
+            team_cards.append(dict(id=t["id"], name=t_live.get("live_entry_name") or t.get("name") or "Team",
                                    ok=False, matched=len(ids),
-                                   problems=len(probs), value=0, bank=t.get("bank", 0.0),
+                                   problems=len(probs), value=0, bank=t_bank,
                                    free_transfers=t.get("free_transfers", 1)))
             continue
         try:
@@ -709,10 +789,11 @@ def compute(force=False, for_team=None):
         xi_ep = sum(by_id[i]["ep"] for i in xi_i)
         cap_p = by_id.get(cap_i)
         team_cards.append(dict(
-            id=t["id"], name=t.get("name") or "Team", ok=True,
+            id=t["id"], name=t_live.get("live_entry_name") or t.get("name") or "Team", ok=True,
             matched=len(ids), problems=len(probs),
-            value=round(sum(by_id[i]["price"] for i in ids), 1),
-            bank=round(float(t.get("bank", 0.0)), 1),
+            value=round(t_live.get("live_value") or sum(by_id[i]["price"] for i in ids), 1),
+            bank=round(float(t_bank), 1),
+            synced=(t_source == "live"),
             free_transfers=int(t.get("free_transfers", 1)),
             proj=round(xi_ep + (cap_p["ep"] if cap_p else 0), 2),
             floor=sum(by_id[i].get("floor", 0) for i in xi_i),
@@ -1215,7 +1296,10 @@ def compute(force=False, for_team=None):
         gws_played = sum(1 for e in evs if _gw_fully_scored(e["id"], fx))
         # entry history if we have it, otherwise nothing banked yet
         points_so_far = int(cfg.get("points_so_far") or 0)
-        if source == "live" and overall_rank is not None:
+        if source == "live" and live_points_so_far is not None:
+            points_so_far = int(live_points_so_far)
+        elif source == "live" and overall_rank is not None:
+            # the legacy single-entry_id path, which still sets `ent` locally
             points_so_far = int((locals().get("ent") or {}).get("summary_overall_points") or
                                 points_so_far)
         proj_now = round(sum(r["ep"] for r in xi) + (by_id[cap]["ep"] if cap else 0), 2)
@@ -1519,9 +1603,15 @@ def route(method, path, raw=b""):
                     squadmod.clear()
                 else:
                     pl = [x for x in (body.get("players") or []) if (x.get("name") or "").strip()]
+                    # entry_id: absent from the body means "leave it alone" (an
+                    # old client that predates this field must not blank out a
+                    # sync it knows nothing about); an explicit "" clears it.
+                    eid_in = body.get("entry_id")
+                    eid_in = (str(eid_in).strip() if eid_in not in (None, "") else
+                             ("" if "entry_id" in body else None))
                     squadmod.upsert_team(body.get("team_id"), body.get("name"), pl,
                                          body.get("bank", 0), body.get("free_transfers", 1),
-                                         formation=body.get("formation"))
+                                         formation=body.get("formation"), entry_id=eid_in)
                 threading.Thread(target=run_job, daemon=True).start()
                 return 200, J, json.dumps({"ok": True})
             except Exception as e:
