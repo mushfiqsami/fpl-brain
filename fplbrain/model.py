@@ -250,9 +250,15 @@ class TeamStrength:
         teams = {t["id"]: t for t in bootstrap["teams"]}
         elements = bootstrap["elements"]
 
+        # A recorded score, not the `finished` flag, is what says a match
+        # happened. They usually agree, but a feed that is slow (or in this
+        # case never gets around) to flip `finished` still posts the final
+        # score the moment the match ends - and treating that gameweek as
+        # unplayed left every team on its preseason prior indefinitely, GW1's
+        # results sitting in the data and never once informing the model.
         played = {tid: 0 for tid in teams}
         for f in fixtures:
-            if f.get("finished") and f.get("team_h_score") is not None:
+            if f.get("team_h_score") is not None and f.get("team_a_score") is not None:
                 played[f["team_h"]] += 1
                 played[f["team_a"]] += 1
 

@@ -125,18 +125,23 @@ def _horizon_total(squad_ids, ep, gws, by_id):
 # The honest answer during that window is that the gameweek has not told us
 # anything reliable yet, so keep using what we knew going in.
 #
-# PHASE_OVERRIDES pins the boundaries by hand. Auto-detection from the API is
-# the fallback and is usually right, but it leans on flags FPL sets late and
-# sometimes inconsistently, and being wrong here is expensive. Times are UTC.
-# BDT is UTC+6, so 25 Aug 03:00 BDT is 24 Aug 21:00 UTC.
-# ---------------------------------------------------------------------------
+# The primary signal is a recorded score, not FPL's `finished`/`data_checked`
+# flags. Those usually agree, but this feed never once flipped them for GW1
+# even after every one of its ten fixtures had a final score sitting in the
+# data for days - so anything that waited on them stayed wrong indefinitely,
+# not just for the few hours a deadline-based guess would have been off by.
+# Scores are the actual event; the flags are FPL's bookkeeping about the event,
+# and bookkeeping that never runs must not be allowed to block on.
+#
+# PHASE_OVERRIDES survives as a manual circuit-breaker for whichever gameweek
+# needs one - a corrected score, a feed outage, a genuinely stuck flag on a
+# gameweek this logic still gets wrong for some other reason - but it is no
+# longer required reading week to week, because the score check re-derives the
+# same answer on its own as each new gameweek is played.
 PHASE_OVERRIDES = {
-    # The first deadline: after this, live counters describe THIS season.
-    "rollover_utc": "2026-08-21T17:30:00Z",
-    # When GW1's results are settled and worth modelling on. Until then the app
-    # stays in note-taking mode rather than rebuilding plans on a half-played
-    # gameweek.
-    "results_final_utc": "2026-08-24T21:00:00Z",
+    # "underway": treat this gameweek as settled regardless of what the scores
+    # or flags say. "preseason"/"settling": hold the season at that phase no
+    # matter what has actually been played. Leave empty in the normal case.
 }
 
 PHASE_PRESEASON = "preseason"
@@ -151,30 +156,45 @@ def _utc(s):
         return None
 
 
-def season_phase(events, now=None, overrides=PHASE_OVERRIDES):
+def _gw_fully_scored(gw_id, fixtures):
+    """Every fixture in this gameweek has a final score recorded.
+
+    A postponement or a genuine in-progress match leaves one fixture without a
+    score, and that correctly keeps the whole gameweek from reading as settled
+    - a partial result is not evidence of the players who have not featured
+    yet, and averaging it in early would be exactly the mistake this module
+    exists to prevent.
+    """
+    rows = [f for f in fixtures if f.get("event") == gw_id]
+    if not rows:
+        return False
+    return all(f.get("team_h_score") is not None and f.get("team_a_score") is not None
+              for f in rows)
+
+
+def season_phase(events, fixtures=(), now=None, overrides=PHASE_OVERRIDES):
     """
     ('preseason' | 'settling' | 'underway', human sentence).
 
       preseason  nothing has kicked off. Live counters are last season's, and
                  are the best guide to who plays where he is now.
-      settling   a deadline has passed but no gameweek is confirmed finished.
-                 Counters have reset and hold a game or less of noise. Read
-                 nothing into them; keep last season's picture.
-      underway   at least one gameweek is finished and checked. Real data.
+      settling   a gameweek is in progress - kicked off, not every fixture
+                 scored yet. Counters have reset and hold a game or less of
+                 noise. Read nothing into them; keep last season's picture.
+      underway   at least one gameweek is fully scored. Real data.
     """
     now = now or datetime.datetime.now(datetime.timezone.utc)
-    roll = _utc((overrides or {}).get("rollover_utc"))
-    final = _utc((overrides or {}).get("results_final_utc"))
+    forced = (overrides or {}).get("phase")
+    if forced in (PHASE_PRESEASON, PHASE_SETTLING, PHASE_UNDERWAY):
+        return forced, f"Phase pinned to '{forced}' by PHASE_OVERRIDES."
 
-    done = [e for e in events if e.get("finished") and e.get("data_checked")]
-    if done:
-        last = max(e["id"] for e in done)
-        return PHASE_UNDERWAY, f"GW{last} is settled - projections run on this season's data."
+    scored_ids = [e["id"] for e in events if _gw_fully_scored(e["id"], fixtures)]
+    if scored_ids:
+        last = max(scored_ids)
+        return PHASE_UNDERWAY, f"GW{last} is fully scored - projections run on this season's data."
 
-    if roll is not None:
-        started = now >= roll
-    else:
-        started = any(e.get("is_current") or e.get("finished") for e in events)
+    started = any(e.get("is_current") for e in events)
+    if not started:
         for e in events:
             d = _utc(e.get("deadline_time"))
             if d and now >= d:
@@ -183,14 +203,9 @@ def season_phase(events, now=None, overrides=PHASE_OVERRIDES):
     if not started:
         return PHASE_PRESEASON, "Season has not started - built from last season's record."
 
-    if final is not None and now < final:
-        when = final.strftime("%d %b %H:%M UTC")
-        return PHASE_SETTLING, (
-            f"GW1 is being played. Nothing is settled until {when}, so the model is "
-            "taking notes, not rebuilding - projections still stand on last season.")
-    return PHASE_SETTLING, ("A gameweek is under way but no result is confirmed, so the "
-                            "model is holding last season's picture rather than reading "
-                            "a part-played week as evidence.")
+    return PHASE_SETTLING, ("A gameweek is under way with results still coming in, so the "
+                            "model is holding last season's picture rather than reading a "
+                            "part-played week as evidence.")
 
 
 def free_rein(events, gw):
@@ -252,7 +267,7 @@ def compute(force=False, for_team=None):
     evs = bs["events"]
     gw = (next((e["id"] for e in evs if e.get("is_next")), None)
           or next((e["id"] for e in evs if e.get("is_current")), None)
-          or next((e["id"] for e in evs if not e.get("finished")), evs[-1]["id"]))
+          or next((e["id"] for e in evs if not _gw_fully_scored(e["id"], fx)), evs[-1]["id"]))
     H = int(cfg.get("horizon", 5))
     horizon = [g for g in range(gw, gw + H) if g <= 38]
     # The Targets tab is about who to bring in for what is coming, so "next 5"
@@ -272,7 +287,7 @@ def compute(force=False, for_team=None):
     mult, _ = calibrate.load_calibration()
     # Which season the live minutes/starts belong to decides how they may be
     # read at all, so it is settled before the model is built.
-    phase, phase_note = season_phase(evs)
+    phase, phase_note = season_phase(evs, fx)
     log(phase_note)
     pm = PlayerModel(ts, fm, calibration=mult, player_prior=pprior,
                      live_is_last_season=(phase == PHASE_PRESEASON))
@@ -1095,9 +1110,11 @@ def compute(force=False, for_team=None):
 
     try:
         already = {h.get("gw") for h in calibrate.calibration_history()}
-        # oldest first, so multipliers move in the order the season happened
+        # oldest first, so multipliers move in the order the season happened.
+        # Scored, not `finished` - the flag that never confirms GW1 in this
+        # feed would have left the self-correction loop silently never running.
         pending = [e["id"] for e in evs
-                   if e.get("finished") and e["id"] not in already]
+                   if _gw_fully_scored(e["id"], fx) and e["id"] not in already]
         for target_gw in sorted(pending)[-5:]:
             live = cl.live(int(target_gw), force=False)
             actual = {e["id"]: e["stats"]["total_points"] for e in live["elements"]}
@@ -1129,7 +1146,7 @@ def compute(force=False, for_team=None):
         # NOT `gw`, which by now points at the next deadline.
         note_gw = next((e["id"] for e in evs if e.get("is_current")), None)
         if note_gw is None:
-            done_ids = [e["id"] for e in evs if e.get("finished")]
+            done_ids = [e["id"] for e in evs if _gw_fully_scored(e["id"], fx)]
             note_gw = max(done_ids) if done_ids else None
         if note_gw:
             live_rows = cl.live(int(note_gw), force=False)["elements"]
@@ -1166,8 +1183,7 @@ def compute(force=False, for_team=None):
                          key=lambda p: -swing[p["id"]])[:12]
             noting = dict(
                 gw=note_gw,
-                settled=bool(next((e.get("finished") and e.get("data_checked")
-                                   for e in evs if e["id"] == note_gw), False)),
+                settled=_gw_fully_scored(note_gw, fx),
                 players=graded,
                 mine=[r for r in graded if r["owned"]],
                 comebacks=formmod.comebacks(bs["elements"], pm.availability,
@@ -1192,8 +1208,11 @@ def compute(force=False, for_team=None):
     from fplbrain import brain as brainmod
     brain_view = None
     try:
-        finished = [e for e in evs if e.get("finished")]
-        gws_played = len(finished)
+        # Scored, not `finished` - see season_phase. Getting this wrong means
+        # brain.py's pace/target tracking permanently believes zero gameweeks
+        # have been played, which understates the rate still needed for every
+        # week that follows.
+        gws_played = sum(1 for e in evs if _gw_fully_scored(e["id"], fx))
         # entry history if we have it, otherwise nothing banked yet
         points_so_far = int(cfg.get("points_so_far") or 0)
         if source == "live" and overall_rank is not None:
