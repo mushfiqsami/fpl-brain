@@ -483,6 +483,27 @@ def resolve(players, elements, teams):
         if not want_n:
             continue
 
+        def name_score(c):
+            if c["web"] == want_n:
+                return 100
+            if c["second"] == want_n:
+                return 90
+            if c["whole"] == want_n:
+                return 88
+            if want_n and (want_n in c["web"] or c["web"] in want_n):
+                return 60
+            if want_n and want_n in c["whole"]:
+                return 50
+            return -1
+
+        # If exactly one player in the whole pool carries this name at surname
+        # tier or better, the name alone already answers "who did you mean" -
+        # Donnarumma, Dubravka, Thiaw are each the only one of that name in the
+        # game. A club typed for a genuinely unique name is not disambiguating
+        # anything, so getting it wrong (a summer transfer, a typo, last
+        # season's shirt) must not cost anything either.
+        unique_exact = sum(1 for c in index if name_score(c) >= 88) == 1
+
         # Scored WITHOUT any already-taken penalty, so "who did you mean" is
         # answered on the name and club alone. Whether that player is still
         # free is a separate question, handled below - rolling it into the
@@ -490,19 +511,18 @@ def resolve(players, elements, teams):
         # who merely shared a fragment of the surname, and the squad then
         # contained someone the owner had never typed.
         def score(c):
-            s = 0
-            if c["web"] == want_n:
-                s += 100
-            elif c["second"] == want_n:
-                s += 90
-            elif c["whole"] == want_n:
-                s += 88
-            elif want_n and (want_n in c["web"] or c["web"] in want_n):
-                s += 60
-            elif want_n and want_n in c["whole"]:
-                s += 50
-            else:
+            s = name_score(c)
+            if s < 0:
                 return -1
+            if s >= 88 and unique_exact:
+                # Nothing the club field says can add or subtract confidence
+                # here - the name alone already identifies exactly one player,
+                # so treat it as fully confirmed rather than merely tolerated.
+                # Without this a stale or mistyped club (Dubravka moved clubs,
+                # a typo, last season's shirt) still kept an unambiguous exact
+                # name match from ever reading as more than "weak - check this",
+                # on every single row it happened to, for no real reason.
+                return 140
             if want_c and (c["club_s"] == want_c or c["club_f"] == want_c):
                 s += 40
             elif want_c:
