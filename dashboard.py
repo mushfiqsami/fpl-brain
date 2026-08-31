@@ -695,7 +695,14 @@ def compute(force=False, for_team=None):
             route = optimise.plan_route(
                 current, r_pool, ep, bank, ft, span,
                 decay=float(cfg.get("decay", 0.88)),
-                free_first=unlimited, max_squad=90,
+                # Smaller than it looks generous enough to be: this problem is
+                # solved on Render's free tier, a fraction of a CPU, under the
+                # same 25s wall clock a fast dev machine clears easily. A dev
+                # machine proves optimality here reliably; the live host is not
+                # guaranteed to, and a route it could not confirm is now dropped
+                # entirely rather than shown - trimming the search space further
+                # buys back the odds of it actually finishing the proof in time.
+                free_first=unlimited, max_squad=65,
                 time_limit=int(cfg.get("route_seconds", 25)))
             # Holding the current squad every gameweek, no transfers, is always a
             # legal solution to this problem - so a genuinely correct formulation
