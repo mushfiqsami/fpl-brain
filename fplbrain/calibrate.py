@@ -35,17 +35,30 @@ def _load(path, default):
 
 
 GIST_NAME = "fpl_brain_calibration.json"
+PRED_GIST_NAME = "fpl_brain_predictions.json"
+
+# How many gameweeks of predictions to keep. This file exists purely so a
+# finished gameweek can be graded once, and once that grading has happened the
+# entry is dead weight - kept trimmed so the mirrored copy stays small rather
+# than accumulating a whole season.
+PRED_KEEP_GWS = 6
 
 
 def _save(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=1)
-    if path == CAL_FILE:
-        # What the model has learned is worth more than the disk it sits on.
+    # What the model has predicted or learned is worth more than the disk it
+    # sits on: a hosted box wipes this file on every redeploy, and predictions
+    # logged before a finished gameweek is graded are otherwise gone before
+    # score_gameweek() ever gets to see them - which is exactly what happened
+    # to GW1 here, silently, for weeks, with calibration never noticing there
+    # was nothing left to grade.
+    gist_name = {CAL_FILE: GIST_NAME, PRED_FILE: PRED_GIST_NAME}.get(path)
+    if gist_name:
         try:
             from . import squad
-            squad.sync_extra_push(GIST_NAME, obj)
+            squad.sync_extra_push(gist_name, obj)
         except Exception:
             pass
 
@@ -71,12 +84,32 @@ def load_calibration():
     return c.get("multipliers", {"GK": 1.0, "DEF": 1.0, "MID": 1.0, "FWD": 1.0}), c
 
 
+def _load_predictions():
+    """Local copy if there is one, else the mirrored copy - same reasoning as
+    load_calibration(): empty here usually means wiped, not never-written."""
+    preds = _load(PRED_FILE, {})
+    if not preds:
+        try:
+            from . import squad
+            remote = squad.sync_extra_pull(PRED_GIST_NAME)
+            if remote:
+                preds = remote
+        except Exception:
+            pass
+    return preds
+
+
 def log_predictions(gw, rows):
     """rows: [{id, name, pos, ep, price, p_appear}]"""
-    preds = _load(PRED_FILE, {})
+    preds = _load_predictions()
     preds[str(gw)] = {str(r["id"]): dict(name=r["name"], pos=r["pos"], ep=round(r["ep"], 3),
                                          p_appear=round(r.get("p_appear", 0), 3))
                       for r in rows}
+    # Trim to the most recent gameweeks by numeric id, not insertion order -
+    # dict order does not track gameweek order once a value has been
+    # overwritten, which a plain slice would get wrong.
+    keep = sorted(preds, key=lambda k: int(k))[-PRED_KEEP_GWS:]
+    preds = {k: preds[k] for k in keep}
     _save(PRED_FILE, preds)
 
 
@@ -110,7 +143,7 @@ def score_gameweek(gw, actual_points: dict, min_p_appear=0.30):
     actual_points : {element_id: points scored in that gameweek}
     Returns a report dict and updates the stored calibration multipliers.
     """
-    preds = _load(PRED_FILE, {}).get(str(gw))
+    preds = _load_predictions().get(str(gw))
     if not preds:
         return dict(error=f"No logged predictions for GW{gw}. Run `update --gw {gw}` first.")
 
