@@ -697,6 +697,21 @@ def compute(force=False, for_team=None):
                 decay=float(cfg.get("decay", 0.88)),
                 free_first=unlimited, max_squad=90,
                 time_limit=int(cfg.get("route_seconds", 25)))
+            # Holding the current squad every gameweek, no transfers, is always a
+            # legal solution to this problem - so a genuinely correct formulation
+            # can never come back "Infeasible", and a wall-clock timeout returns
+            # "Not Solved", not that. Seeing "Infeasible" here means the solve
+            # itself broke, and the moves in `route` are then whatever CBC had
+            # sitting in memory when it gave up - not a checked, legal plan.
+            # Concretely: it recommended a defender ranked 13th in its own price
+            # band over eight better, unblocked alternatives, and that was not a
+            # deliberate "wait" strategy - there is no code path that reasons
+            # about timing a purchase. Showing it as advice while unconfirmed
+            # would be worse than not showing it.
+            if route.get("status") != "Optimal":
+                log(f"Route not trusted (solver reported '{route.get('status')}', "
+                    "which should not be possible from a squad you already own).")
+                route = None
         except Exception as exc:
             log(f"Route planning unavailable ({exc}).")
             route = None
