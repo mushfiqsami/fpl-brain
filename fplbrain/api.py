@@ -81,6 +81,18 @@ class LiveClient:
         """Live/finished scores for a gameweek. Short TTL — this moves."""
         return _get_json(f"{BASE}/event/{gw}/live/", f"live_{gw}", 300, force)
 
+    def league_standings(self, league_id: int = 314, page: int = 1, force=False):
+        """
+        A classic league's table. League 314 is "Overall" - every entry in the
+        game - so page 1 of it is the current top 50 managers in the world.
+
+        That is the one source of truth this project does not generate itself:
+        everything else here is the model's own opinion, and a model with no
+        outside reference cannot tell being wrong from being early.
+        """
+        return _get_json(f"{BASE}/leagues-classic/{league_id}/standings/?page_standings={page}",
+                         f"league_{league_id}_{page}", self.ttl, force)
+
 
 ARCHIVE = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
 

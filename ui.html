@@ -553,6 +553,18 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
       <h2>Price moves and team news <span class="tag">straight from FPL</span></h2>
       <div id="newslist"></div>
     </div>
+    <div class="panel">
+      <h2>What the top 10 in the world hold <span class="tag" id="elitetag"></span></h2>
+      <div class="body" style="padding-bottom:0">
+        <p class="note" style="border:none">The only number here the model did not produce itself.
+          It is <b>not</b> advice to copy them — the template is by definition what everyone already
+          owns, and you cannot climb past 10 million people by holding it. It is here to show where
+          this squad and the best managers in the game <b>disagree</b>, so that is a decision rather
+          than an oversight. <b>Captained</b> is the sharper signal: it is the one pick nobody can
+          hedge.</p>
+      </div>
+      <div id="elitelist"></div>
+    </div>
   </div>
 
   <div id="t-fixtures" class="hidden">
@@ -928,7 +940,7 @@ function render(){
   document.getElementById('caveats').innerHTML=(D.caveats||[]).map(c=>
     `<div class="note">${esc(c)}</div>`).join('');
 
-  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawTeams();drawTeamCards();loadSquad();
+  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawElite();drawTeams();drawTeamCards();loadSquad();
   document.getElementById('cfg_entry').value=D.entry_id||'';
   fetch('/api/lan').then(r=>r.json()).then(j=>{
     document.getElementById('lanurl').textContent=j.url||'not available';}).catch(()=>{});
@@ -1287,6 +1299,31 @@ function drawChips(){
 /* ---------- updates ---------- */
 let UPSORT='balance';
 function setUpsort(k){UPSORT=k;drawUpdates();}
+function drawElite(){
+  const box=document.getElementById('elitelist'); if(!box)return;
+  const E=D&&D.elite;
+  const tag=document.getElementById('elitetag');
+  if(!E){ box.innerHTML='<div class="body"><p class="note" style="border:none">'
+    +'Not loaded yet.</p></div>'; if(tag)tag.textContent=''; return; }
+  if(tag)tag.textContent='top '+E.managers+' · GW'+E.gw;
+  const row=(r,mark)=>`<div class="prw" style="grid-template-columns:1fr 90px 74px">
+    <div class="who"><b>${esc(r.name)}</b>
+      <div class="sub">${esc(r.club)} · ${esc(r.pos)} · £${r.price}m${mark||''}</div></div>
+    <div class="epcell"><b class="num">${Math.round(r.share*100)}%</b><s>owned</s></div>
+    <div class="epcell"><b class="num">${r.captained||0}</b><s>captained</s></div></div>`;
+  let h='';
+  if((E.missing||[]).length){
+    h+='<div class="sechead">They hold, you do not</div>'
+      +E.missing.map(r=>row(r,' · 5GW '+r.ep)).join('');
+  }
+  if((E.fading||[]).length){
+    h+='<div class="sechead">You hold, they mostly do not</div>'
+      +E.fading.map(r=>row(r,' · 5GW '+r.ep)).join('');
+  }
+  h+='<div class="sechead">Most owned among the top '+E.managers+'</div>'
+    +(E.owned||[]).map(r=>row(r, r.mine?' · <b style="color:var(--mint)">you own</b>':'')).join('');
+  box.innerHTML=h;
+}
 function drawUpdates(){
   if(!D)return;
   const when=document.getElementById('upwhen');

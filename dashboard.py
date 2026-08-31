@@ -313,6 +313,88 @@ def free_rein(events, gw):
 # =====================================================================
 # COMPUTE
 # =====================================================================
+# ---------------------------------------------------------------------------
+# Don't redo work nothing has changed.
+#
+# A refresh means "go and see if anything is new", not "throw away everything
+# you already worked out". The whole pipeline - 626 projections, a 3,000-run
+# simulation, and three integer programs of which the route alone takes about
+# nine seconds - was being rebuilt from nothing on every click, and then again
+# for each of the other saved teams in the background. With five teams synced
+# that is roughly forty-five seconds of solver time to produce, most of the
+# time, byte-identical output.
+#
+# So: always go and fetch (that part is cheap and is the actual point of
+# refreshing), then fingerprint what the answer depends on. If the fingerprint
+# is unchanged, the previous answer is still correct by definition and is
+# returned as it stands. `force` skips the cache entirely, which is what the
+# hard-refresh button is for.
+# ---------------------------------------------------------------------------
+RESULT_CACHE = os.path.join(HERE, "data", "results")
+
+
+def _fingerprint(bs, fx, gw, mysq, cfg, mult):
+    """Everything a computed answer actually depends on, and nothing else.
+
+    Deliberately excludes anything that moves on its own - timestamps, the
+    order the API happened to return players in - or the cache would never hit.
+    """
+    squad_sig = None
+    if mysq:
+        squad_sig = dict(
+            entry=mysq.get("entry_id"),
+            players=sorted((p.get("name"), p.get("club"), p.get("role"))
+                           for p in (mysq.get("players") or [])),
+            bank=mysq.get("bank"), ft=mysq.get("free_transfers"),
+            formation=mysq.get("formation"))
+    payload = dict(
+        gw=gw,
+        # results landing is what actually moves a projection
+        scored=sum(1 for f in fx if f.get("team_h_score") is not None),
+        # so are prices, injuries and who is flagged
+        elements=[(e["id"], e["now_cost"], e["status"],
+                   e.get("chance_of_playing_next_round"), e["minutes"], e["starts"])
+                  for e in bs["elements"]],
+        squad=squad_sig,
+        mult=mult,
+        knobs={k: cfg.get(k) for k in
+               ("horizon", "decay", "ft_value", "max_hits", "budget",
+                "prior_weight_games", "home_multiplier", "away_multiplier",
+                "sim_runs", "season_target", "elite_managers")},
+    )
+    return hashlib.md5(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
+
+
+def _cached_result(key, team_key):
+    p = os.path.join(RESULT_CACHE, f"{team_key}_{key}.json")
+    if not os.path.exists(p):
+        return None
+    try:
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _store_result(key, team_key, data):
+    try:
+        os.makedirs(RESULT_CACHE, exist_ok=True)
+        # only the newest answer per team is worth keeping; the inputs that
+        # produced an older one are gone and will not come back.
+        for old in os.listdir(RESULT_CACHE):
+            if old.startswith(f"{team_key}_") and old != f"{team_key}_{key}.json":
+                try:
+                    os.remove(os.path.join(RESULT_CACHE, old))
+                except OSError:
+                    pass
+        tmp = os.path.join(RESULT_CACHE, f"{team_key}_{key}.json.tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        os.replace(tmp, os.path.join(RESULT_CACHE, f"{team_key}_{key}.json"))
+    except Exception:
+        pass          # a cache that cannot be written must never fail a run
+
+
 def compute(force=False, for_team=None):
     from fplbrain.api import LiveClient
     from fplbrain.model import TeamStrength, FixtureModel, PlayerModel, POS_NAME
@@ -389,6 +471,18 @@ def compute(force=False, for_team=None):
     # entry is the only way to get real advice regardless of which this is.
     all_teams = squadmod.load_all()
     mysq = squadmod.load_one(for_team) if for_team else squadmod.load()
+
+    # Everything above here is cheap - a couple of cached reads and one API
+    # call. Everything below is not. If the inputs are identical to the last
+    # run's, the answer is too, so hand back the one already worked out.
+    _key = _fingerprint(bs, fx, gw, mysq, cfg, mult)
+    _team_key = for_team or (mysq or {}).get("id") or "active"
+    if not force:
+        _hit = _cached_result(_key, _team_key)
+        if _hit is not None:
+            log("Nothing has changed since the last run - reusing it.")
+            return _hit
+
     formation = "auto"
     force_start, force_bench = set(), set()
     # What the server actually resolved each row to - live pick or typed row.
@@ -1298,6 +1392,44 @@ def compute(force=False, for_team=None):
         log(f"Could not take notes on the gameweek ({exc}).")
 
     # ------------------------------------------------------------------
+    # The one input this project does not generate itself.
+    #
+    # Everything above is the model's own opinion, which is a closed loop: if
+    # it is wrong about a player, nothing else here disagrees with it. The top
+    # ten managers in the world are an outside reference. Not to copy - copying
+    # the template is a slow way of owning what 10 million people already own -
+    # but to surface, specifically, where this squad and the best managers in
+    # the game disagree, so that is a decision rather than an oversight.
+    # ------------------------------------------------------------------
+    from fplbrain import elite as elitemod
+    elite_view = None
+    try:
+        n_elite = int(cfg.get("elite_managers", 10))
+        ent_rows = elitemod.top_entries(cl, n=n_elite, force=force)
+        # their picks for the last gameweek that actually has results
+        elite_gw = max([e["id"] for e in evs if _gw_fully_scored(e["id"], fx)] or [max(1, gw - 1)])
+        counts, seen = elitemod.holdings(cl, ent_rows, elite_gw, force=force)
+        ep_total = {pid: sum(ep[pid][g] for g in horizon) for pid in ep}
+        missing, fading = elitemod.disagreements(counts, seen, set(current), by_id, ep_total)
+        top_owned = sorted(
+            ({**dict(id=pid, name=by_id[pid]["name"], club=by_id[pid]["club"],
+                     pos=POS_NAME[by_id[pid]["pos"]], price=round(by_id[pid]["price"], 1),
+                     mine=(pid in current)), **c,
+              "share": round(c["owned"] / max(1, seen), 2)}
+             for pid, c in counts.items() if pid in by_id),
+            key=lambda r: (-r["owned"], -r["captained"]))[:15]
+        elite_view = dict(
+            gw=elite_gw, managers=seen,
+            table=[dict(rank=e["rank"], team=e["team"], name=e["name"], total=e["total"])
+                   for e in ent_rows],
+            owned=top_owned,
+            missing=[dict(r, pos=POS_NAME[r["pos"]], price=round(r["price"], 1)) for r in missing],
+            fading=[dict(r, pos=POS_NAME[r["pos"]], price=round(r["price"], 1)) for r in fading])
+        log(f"Read the top {seen} managers: {len(missing)} players they hold that you do not.")
+    except Exception as exc:
+        log(f"Could not read the top managers ({exc}).")
+
+    # ------------------------------------------------------------------
     # The second unit: hold the goal and judge the maths against it.
     #
     # Everything above is a calculator - it answers the question it was asked
@@ -1339,12 +1471,12 @@ def compute(force=False, for_team=None):
     except Exception as exc:
         log(f"Strategy view unavailable ({exc}).")
 
-    return dict(
+    _result = dict(
         gw=gw, horizon=horizon, deadline=ev.get("deadline_time"),
         entry_name=entry_name, entry_id=eid, overall_rank=overall_rank,
         squad_source=source, bank=round(bank, 1), squad_value=round(squad_value, 1),
         squad_problems=squad_problems,
-        phase=phase, phase_note=phase_note, noting=noting,
+        phase=phase, phase_note=phase_note, noting=noting, elite=elite_view,
         squad_resolved=squad_resolved,
         my_squad=(mysq["players"] if mysq else None),
         team_cards=team_cards,
@@ -1431,6 +1563,8 @@ def compute(force=False, for_team=None):
                   pos=POS_NAME[p["pos"]]) for p in pool],
             key=lambda x: (x["c"], x["n"])),
         generated=time.strftime("%d %b %Y, %H:%M"))
+    _store_result(_key, _team_key, _result)
+    return _result
 
 
 def warm_other_teams():
