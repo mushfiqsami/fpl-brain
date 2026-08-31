@@ -100,7 +100,7 @@ CONFIG = os.path.join(HERE, "config.json")
 # from the page itself, whether the thing you are looking at is the thing that
 # was last published - a stale service worker or a deploy that never finished
 # otherwise look exactly like a model that is ignoring you.
-BUILD = "83bd3f2 · 01 Sep 00:57"
+BUILD = "f857b6e · 01 Sep 01:06"
 
 # ---------------------------------------------------------------------------
 # ZeroGPU compatibility.
@@ -791,15 +791,38 @@ def compute(force=False, for_team=None):
             # "Not Solved", not that. Seeing "Infeasible" here means the solve
             # itself broke, and the moves in `route` are then whatever CBC had
             # sitting in memory when it gave up - not a checked, legal plan.
-            # Concretely: it recommended a defender ranked 13th in its own price
-            # band over eight better, unblocked alternatives, and that was not a
-            # deliberate "wait" strategy - there is no code path that reasons
-            # about timing a purchase. Showing it as advice while unconfirmed
-            # would be worse than not showing it.
             if route.get("status") != "Optimal":
                 log(f"Route not trusted (solver reported '{route.get('status')}', "
                     "which should not be possible from a squad you already own).")
                 route = None
+
+            # The status string alone is not enough. PuLP can report "Optimal"
+            # for a run CBC cut off at the time limit before the proof
+            # completed, not only for one that actually finished it - the two
+            # are not reliably distinguished by the label, and a resource-
+            # starved host hits the cutoff far more often than a fast one. A
+            # route that sold a fully fit Haaland, projected roughly double his
+            # replacement's points in every gameweek shown, still carried the
+            # label "Optimal".
+            #
+            # What is checkable without trusting the solver's self-report at
+            # all: holding the current squad and making no transfers is always
+            # a legal point in this problem's own search space, at zero
+            # transfer cost. A genuine optimum can therefore never score below
+            # it. The baseline is computed independently here - the same
+            # rank_xi call the rest of the page already uses, nothing
+            # route-specific - so any route that does not beat it is proof the
+            # solve did not finish, whatever status it claims.
+            if route:
+                hold_total = 0.0
+                for g in span:
+                    hx, hcap, _hv, _hb, _hd = optimise.rank_xi(list(current), ep, g, by_id)
+                    hold_total += sum(ep[i].get(g, 0.0) for i in hx) + ep.get(hcap, {}).get(g, 0.0)
+                if route["total"] < hold_total - 0.5:      # small floating-point margin
+                    log(f"Route not trusted (scored {route['total']:.1f}, below the "
+                        f"{hold_total:.1f} of simply holding your squad - the solve "
+                        "did not finish despite reporting 'Optimal').")
+                    route = None
         except Exception as exc:
             log(f"Route planning unavailable ({exc}).")
             route = None
