@@ -58,10 +58,10 @@ class PlayerSim:
     """Simulates one player's gameweek points distribution."""
 
     __slots__ = ("pos", "rates", "p_start", "p_sub", "avg_start_mins",
-                 "fixtures", "base_lambda", "pen_share", "sp_share")
+                 "fixtures", "base_lambda", "pen_share", "sp_share", "calibration")
 
     def __init__(self, pos, rates, p_start, p_sub, avg_start_mins,
-                 fixtures, base_lambda, pen_share=0.0, sp_share=0.0):
+                 fixtures, base_lambda, pen_share=0.0, sp_share=0.0, calibration=1.0):
         self.pos = pos
         self.rates = rates
         self.p_start = p_start
@@ -71,6 +71,14 @@ class PlayerSim:
         self.base_lambda = base_lambda
         self.pen_share = pen_share        # extra xG from being the penalty taker
         self.sp_share = sp_share          # extra xA from set pieces
+        # The same per-position multiplier PlayerModel.project() applies to its
+        # total. Without it the simulated distribution silently stopped
+        # tracking the analytic EP the moment calibrate.py started returning
+        # anything other than 1.0 for every position - captain_value, ceiling,
+        # floor and p_haul all quietly went back to running on the model's
+        # pre-calibration numbers while the headline EP used the corrected
+        # ones, and the two disagreed by exactly the calibration gap.
+        self.calibration = calibration
 
     def one(self, rng: random.Random) -> int:
         return self.draw(rng)[0]
@@ -153,7 +161,12 @@ class PlayerSim:
 
     def run(self, n=4000, seed=None):
         rng = random.Random(seed)
-        out = [self.one(rng) for _ in range(n)]
+        # Scaled here, not after, so mean/median/percentiles AND the p_haul /
+        # p_big / p_blank threshold crossings are all computed on the same
+        # calibrated numbers the rest of the app reports - those thresholds are
+        # nonlinear, so rescaling the summary stats afterward would not have
+        # produced the same p_haul a rescaled sample does.
+        out = [self.one(rng) * self.calibration for _ in range(n)]
         out.sort()
         m = sum(out) / n
         var = sum((x - m) ** 2 for x in out) / n
