@@ -511,8 +511,14 @@ def compute(force=False, for_team=None):
                     force_bench.add(r["id"])
             live_bit = res[0] if res_source == "live" else {}
             bank = float(live_bit.get("live_bank", mysq.get("bank", 0.0)))
-            ft = (min(5, max(1, int(cfg.get("free_transfers_override") or 1)))
-                  if res_source == "live" else int(mysq.get("free_transfers", 1)))
+            # FPL's public API does not expose current free-transfer count
+            # without login, live-synced or not, so it is always the value
+            # typed into the squad editor - the same field a manual team uses.
+            # This used to ignore that field for a synced team and fall back to
+            # a config default clamped to a minimum of 1, which meant a squad
+            # that had genuinely spent both its transfers (0 left) could never
+            # be saved as anything but 1 - the save always "changed back".
+            ft = min(5, max(0, int(mysq.get("free_transfers", 1))))
             squad_value = round(live_bit.get("live_value") or
                                 sum(r["price"] for r in res[:15]), 1)
             entry_name = live_bit.get("live_entry_name") or mysq.get("name") or "My squad"
