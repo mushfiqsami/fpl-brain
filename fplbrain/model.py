@@ -102,7 +102,14 @@ def flag_recovery(status, gw_offset):
 # historical rate may not reflect at all.
 PEN_PER_GAME = 0.12
 PEN_CONVERSION = 0.79
-PEN_UPLIFT = {1: 0.0, 2: PEN_PER_GAME * PEN_CONVERSION, 3: PEN_PER_GAME * PEN_CONVERSION}
+# Order 1 is the man who actually takes them - a backup at order 2 or 3 takes
+# essentially none in practice unless the primary is already off the pitch,
+# which his own p_appear already prices in a different way. Inverted before:
+# the designated taker (order 1) was credited 0.0 while his backups got the
+# full uplift instead, so the player who actually takes penalties got none of
+# the extra goals for taking them and a teammate who does not got credited
+# for it in his place.
+PEN_UPLIFT = {1: PEN_PER_GAME * PEN_CONVERSION, 2: 0.0, 3: 0.0}
 # Corners and indirect free kicks mostly convert into assists.
 SP_ASSIST_UPLIFT = {1: 0.055, 2: 0.030, 3: 0.015}
 
