@@ -136,7 +136,10 @@ the tails and over-rated high-volume defenders).
 **`sim.py` — Monte Carlo.** EP is a mean, and captaincy is a convex payoff, so the XI is also
 simulated to get p90 / p_haul / p_blank. `captain_value` ranks on `mean + 0.35·(p90 − mean)`, not
 mean. The simulation must track the analytic EP; a simulator that silently disagrees with its own
-model is worse than none.
+model is worse than none. It samples from raw rates, so every correction `project()` applies after
+that (calibration, FIXTURE_ADJ, the market term) reaches it only through the `sim_scale` that
+`project()` returns. **Any new correction must flow through `sim_scale`** - the simulator has
+silently ignored calibration once and the fixture correction once already.
 
 **`optimise.py` — integer programs (pulp/CBC).** `build_squad` picks 15 from scratch;
 `plan_transfers` decides this week from what you own; `plan_route` makes ownership a *per-gameweek*
@@ -237,5 +240,64 @@ gameweek and scoring it on real results including blanks: **61.8 actual against
 correction — its 95% interval is -18.0 to +6.6 and cannot be told apart from
 zero. 61.8 a gameweek is 2,349 over a season.
 
-**Context for any target.** 2025/26 was won with **2538**. A target above that is
-not ambitious, it is beyond what the best of ten million entrants managed.
+**Context for any target - use this season's field, not last season's winner.**
+2025/26 was won with 2538 against an average manager near 2050. After four
+gameweeks of 2026/27 the average manager is on 62.8 a gameweek, a 2,386 pace, so
+the whole game is scoring higher. Relative to the field, 2700 this season sits
+about where 2364 sat last season - below last year's winning score, not above it.
+Early-season inflation is small (GW1-4 ran +3.7% above the rest of 2025/26).
+
+A four-gameweek lead does not extrapolate. Skill accumulates with gameweeks, luck
+with their square root. The GW4 leader (405, on a 3,848 pace) is 154 ahead of
+average, 3.6 sd; scaled as luck that lead reaches about 2,860, and last season's
+winning margin on this season's base gives 2,876. Expect the winner near 2,870.
+
+**Almost nothing people argue about moves points.** Walk-forward on 2025/26:
+
+- Squad shape - premium-heavy, balanced, best-value, six strategies
+  (`strategy_test.py`) - indistinguishable at n=32. Premiums also give the
+  HIGHER floor: P(week under 45) 4.7% with Haaland+Bruno against 9.4% with
+  nothing above GBP8.5m. Spreading money does not buy extra players, it buys
+  worse versions of the same eleven slots.
+- Fixture difficulty explains about 2.5% of within-player variance. FPL's FDR
+  beat every alternative base tested: league position, opponent goals for,
+  goals against, a combined GF/GA/points rating, and team form over 3, 5, 10
+  and season windows (form gets WORSE the shorter the window). Stop tuning it.
+- Recent player form predicts the next fortnight at r=0.151.
+
+**The armband is where the season is decided** (`captain_test.py`). XI with no
+captain 1,913 a season; highest-projected captain 2,123; perfect hindsight
+2,383. No capturable rule reaches the headroom - highest ceiling, haul
+probability, home, cheapest of the top three are all indistinguishable at
+n=32 (home looked +50 at n=16 and collapsed to +4).
+
+**Captaincy for rank is different** (`rank_test.py`). In points won over the
+field, a differential captain under 10% owned beat the most-owned one by +58 a
+season, 2.3 se. The continuous ep x (1 - ownership) rule beat highest
+projection by +41, 1.4 se - not significant. The app therefore shows both a
+POINTS and a RANK captain rather than switching.
+
+**The transfer market is the best signal the model was missing**
+(`market_fit.py`). Net ownership change before a deadline, fitted on odd
+gameweeks and judged on even: explained variance 10.2% -> 12.8%. Players losing
+over a tenth of their owners scored 1.71 against a model 3.05. Now applied in
+`model.py` (MARKET_*). It does not predict prices well: 19-24% precision on
+rises, and the season's 15 biggest risers gained only GBP0.74m each - team value
+is a minor lever, deliberately not built.
+
+**Teammates move together.** Attacking teammates' gameweek scores correlate
++0.088 against -0.008 across clubs (4.7 sd). The joint simulation still draws
+players independently, so same-club pairs are more concentrated than reported.
+
+**Several teams are a portfolio.** Five teams sharing one squad reach a single
+team's 95th-percentile four-gameweek score 5.4% of the time; five different
+near-optimal squads 12.2% - 2.3x - for about 2.6 points a team. Diversifying
+only the captain (taking 2nd-5th choices) made it WORSE, 4.2%: the lower picks
+cost too much mean. Diversify squads, not armbands.
+
+**Fixture difficulty was under-weighted about 3x, not 5x.** Within-player, real
+easy-vs-hard separation is 1.26 points a start; the model gave 0.43. An earlier
+0.26 came from an across-player comparison confounded with squad quality - only
+compare within-player to within-player. Widening team ratings does not fix it
+(the cause is that appearance points ignore the opponent); FIXTURE_ADJ closes
+about half the gap, deliberately.
