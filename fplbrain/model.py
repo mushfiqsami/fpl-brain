@@ -444,15 +444,68 @@ class FixtureModel:
             h, a = f["team_h"], f["team_a"]
             xh, xa = self.project(h, a)
             out[h].append(dict(opp=a, home=True, xg_for=xh, xg_against=xa,
-                               p_cs=self.cs_prob(xa, xh), fixture=f.get("id")))
+                               p_cs=self.cs_prob(xa, xh), fixture=f.get("id"),
+                               difficulty=f.get("team_h_difficulty")))
             out[a].append(dict(opp=h, home=False, xg_for=xa, xg_against=xh,
-                               p_cs=self.cs_prob(xh, xa), fixture=f.get("id")))
+                               p_cs=self.cs_prob(xh, xa), fixture=f.get("id"),
+                               difficulty=f.get("team_a_difficulty")))
         return out
 
 
 # ===========================================================================
 # 3. PLAYERS
 # ===========================================================================
+# How much the model UNDER-reacts to a hard fixture, by FPL's own difficulty
+# rating, and the correction that closes the gap.
+#
+# Measured on 2025/26: within a single player, comparing his own easy fixtures
+# (FDR 2-3) against his own hard ones (FDR 4-5), the real difference is 1.26
+# points a start - a strong effect, 4.7 standard errors, and the confound that
+# easy fixtures belong to better teams was ruled out by doing the comparison
+# within each player rather than across players. Measured the same way, the
+# model separates the two groups by 0.43. It under-reacts by roughly 3x.
+#
+# Compare only like with like here. An across-player version of that check makes
+# the model look far worse, 0.26, but that number is confounded exactly as the
+# reality figure would be: easy fixtures disproportionately belong to stronger
+# teams, so the comparison is partly measuring squad quality. Within-player on
+# both sides is the honest benchmark.
+#
+# The correction below is deliberately partial - it closes about half the gap,
+# taking 0.43 to 0.83 against a measured 1.26 whose own 95% interval runs 0.73
+# to 1.80. Chasing the point estimate would be over-fitting a number that is
+# itself uncertain, and calibrate.py damps its corrections to 35% for the same
+# reason: one measurement should move the model part of the way, not all of it.
+#
+# The cause is structural, not a mis-set parameter. Widening the team-strength
+# ratings by cutting the empirical-Bayes shrinkage from six games to half a game
+# spreads attack ratings from 0.73-1.34 out to 0.60-1.61 and moves the fixture
+# gap not at all (0.26 to 0.23, the wrong way). The reason is that a fixture only
+# modulates the goals, assists and clean-sheet parts of a projection, while
+# appearance points - about 60% of a typical outfielder's total - do not depend
+# on the opponent at all. Reality has no such firewall: a hard away game also
+# costs minutes when a losing side is rotated, bonus that follows winning teams,
+# and clean sheets outright. Those channels are real and the model has no term
+# for them.
+#
+# So the correction is empirical and openly so: an additive nudge per difficulty
+# level, scaled by how much of each player's projection is fixture-sensitive, and
+# calibrated so the easy-hard separation matches the 1.26 that was measured.
+# It leans on FPL's published rating, which was itself tested against five
+# alternatives - league position, opponent goals for, goals against, a combined
+# goals/points rating, and team form over 3, 5, 10 and season-long windows - and
+# beat all of them.
+FIXTURE_ADJ = {1: +0.21, 2: +0.21, 3: +0.17, 4: -0.74, 5: -0.99}
+
+
+def fixture_correction(fixtures):
+    """Mean difficulty nudge across a gameweek's fixtures, 0.0 when unknown."""
+    vals = [FIXTURE_ADJ.get(int(f["difficulty"]))
+            for f in (fixtures or []) if f.get("difficulty") is not None]
+    vals = [v for v in vals if v is not None]
+    return sum(vals) / len(vals) if vals else 0.0
+
+
 def archive_start_rate(prior_p):
     """Start rate implied by the archive prior alone - the PAST view.
 
@@ -835,6 +888,13 @@ class PlayerModel:
             parts["bonus"] += self.expected_bonus(r["bps90"], exp_min) * att_mult ** 0.5
 
         total = sum(parts.values())
+        # Close the measured fixture-difficulty gap - see FIXTURE_ADJ. Scaled by
+        # the share of this projection that actually depends on the opponent,
+        # because appearance points do not: a hard game does not make a nailed
+        # starter less likely to turn up.
+        if total > 0:
+            fixture_share = max(0.0, total - parts.get("appearance", 0.0)) / total
+            total += fixture_correction(fixtures_for_team) * fixture_share
         total *= self.calibration.get(POS_NAME[pos], 1.0)
         return dict(ep=max(0.0, total), p_appear=p_appear, p60=p60, exp_min=exp_min,
                     parts=parts, rates=r, n_fix=len(fixtures_for_team))
