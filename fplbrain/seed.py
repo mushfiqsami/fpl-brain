@@ -28,16 +28,21 @@ MIN_MINUTES = 400          # below this, a season tells us too little to trust
 
 # Seasons to carry forward, newest first, with how much each counts.
 #
-# Two seasons beat one for the same reason 3,000 minutes beat 400: a per-90 rate
-# built on one campaign is a small sample, and one good or unlucky year distorts
-# it. Blending the previous two roughly doubles the evidence behind every player
-# and pulls the flukes toward the truth.
+# More seasons beat fewer for the same reason 3,000 minutes beat 400: a per-90
+# rate built on one campaign is a small sample, and one good or unlucky year
+# distorts it. Each season added pulls the flukes further toward the truth.
 #
-# The older season is discounted rather than counted equally - football changes,
-# players move clubs and age, and a rate from two years ago describes someone who
-# no longer quite exists. 0.55 says the older campaign is worth a bit over half
-# of the recent one per minute played. That is a judgement, not a fitted value.
-SEASONS = (("2025-26", 1.00), ("2024-25", 0.55))
+# Older seasons are discounted rather than counted equally - football changes,
+# players move clubs and age, and a rate from three years ago describes someone
+# who no longer quite exists. The weights roughly halve per season back, so the
+# third counts for about a third of the most recent one per minute played. These
+# are judgements, not fitted values.
+#
+# Note what the third season does NOT do: it cannot rescue a player whose role
+# has changed, because `minutes` here is a recency-weighted average per season
+# and a long-ago starting campaign still argues he starts. That is precisely the
+# disagreement divergence.py exists to surface rather than silently average away.
+SEASONS = (("2025-26", 1.00), ("2024-25", 0.55), ("2023-24", 0.30))
 
 # Rates that are averaged across seasons. Everything else is taken from the most
 # recent season the player appears in, because it describes his current role

@@ -526,13 +526,29 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
             <input type="checkbox" id="dmine" onchange="drawData()"> Only my squad</label>
         </div>
         <p class="note" style="border:none"><b>This season</b> is what has actually happened —
-          all zeros until a ball is kicked. <b>Last season</b> is the archive baseline.
+          all zeros until a ball is kicked. <b>Last season</b> is the archive baseline, blended from the
+          previous three campaigns with the older ones discounted.
           <b>Model</b> is what the projection actually uses: the two blended and shrunk toward a
           positional average by how many minutes each rests on, so two good games do not send
           someone to the top.</p>
         <p class="note" id="dnote" style="border:none;color:var(--amber)"></p>
       </div>
       <div class="scroll" id="datagrid"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Past against present <span class="tag" id="dvtag"></span></h2>
+      <div class="body" style="padding-bottom:0">
+        <p class="note" style="border:none">Every projection blends the archive baseline with this
+          season&rsquo;s own record. Once the two are averaged the disagreement between them
+          disappears &mdash; which is how a fully fit ever-present can still be projected for 61
+          minutes off a disrupted campaign at a previous club. Listed here are the players the two
+          sources most disagree about. <b>Nothing on this panel changes a projection</b>; the
+          blend is already right in the general case. It is flagged because a person can tell
+          <b>why</b> two sources differ &mdash; a transfer, a new manager, a recovered injury
+          &mdash; where the formula only sees two numbers.</p>
+      </div>
+      <div id="divlist"></div>
     </div>
   </div>
 
@@ -940,7 +956,7 @@ function render(){
   document.getElementById('caveats').innerHTML=(D.caveats||[]).map(c=>
     `<div class="note">${esc(c)}</div>`).join('');
 
-  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawElite();drawTeams();drawTeamCards();loadSquad();
+  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawElite();drawDivergence();drawTeams();drawTeamCards();loadSquad();
   document.getElementById('cfg_entry').value=D.entry_id||'';
   fetch('/api/lan').then(r=>r.json()).then(j=>{
     document.getElementById('lanurl').textContent=j.url||'not available';}).catch(()=>{});
@@ -1299,6 +1315,35 @@ function drawChips(){
 /* ---------- updates ---------- */
 let UPSORT='balance';
 function setUpsort(k){UPSORT=k;drawUpdates();}
+function drawDivergence(){
+  const box=document.getElementById('divlist'); if(!box)return;
+  const V=D&&D.divergence;
+  const tag=document.getElementById('dvtag');
+  if(!V){ box.innerHTML='<div class="body"><p class="note" style="border:none">'
+    +'Not loaded yet.</p></div>'; if(tag)tag.textContent=''; return; }
+  if(tag)tag.textContent=V.notable+' of '+V.checked+' disagree';
+  const pct=v=>Math.round(v*100)+'%';
+  const row=r=>`<div class="prw" style="grid-template-columns:1fr 72px 72px 72px">
+    <div class="who"><b>${esc(r.name)}</b>
+      <div class="sub">${esc(r.club)} &middot; ${esc(r.pos)} &middot; £${r.price}m
+        &middot; ${r.starts} starts, ${r.minutes} min</div></div>
+    <div class="epcell"><b class="num">${pct(r.past)}</b><s>past</s></div>
+    <div class="epcell"><b class="num">${pct(r.now)}</b><s>now</s></div>
+    <div class="epcell"><b class="num" style="color:${r.gap>0?'var(--mint)':'var(--amber)'}">${
+      r.gap>0?'+':''}${pct(r.gap)}</b><s>gap</s></div></div>`;
+  let h='';
+  if((V.rising||[]).length){
+    h+='<div class="sechead">Starts now, did not before &mdash; may be under-rated</div>'
+      +V.rising.map(row).join('');
+  }
+  if((V.fading||[]).length){
+    h+='<div class="sechead">Started before, not now &mdash; may be over-rated</div>'
+      +V.fading.map(row).join('');
+  }
+  if(!h)h='<div class="body"><p class="note" style="border:none">Nothing disagrees by more than '
+    +Math.round(V.threshold*100)+'% right now.</p></div>';
+  box.innerHTML=h;
+}
 function drawElite(){
   const box=document.getElementById('elitelist'); if(!box)return;
   const E=D&&D.elite;

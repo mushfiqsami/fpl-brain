@@ -453,6 +453,34 @@ class FixtureModel:
 # ===========================================================================
 # 3. PLAYERS
 # ===========================================================================
+def archive_start_rate(prior_p):
+    """Start rate implied by the archive prior alone - the PAST view.
+
+    A share of a full season's minutes, uplifted because a share of 38 counts
+    every week a player was injured as a week he chose not to start, and whether
+    he is fit now is priced separately by availability.
+    """
+    return min(1.0, prior_p["minutes"] / (38 * 90.0) * 1.25)
+
+
+def observed_start_rate(starts, played_games):
+    """Start rate from this season's record alone - the PRESENT view."""
+    if played_games <= 0:
+        return 0.0
+    return min(1.0, starts / played_games)
+
+
+def prior_blend_weight(played_games):
+    """How much of the blended start rate comes from THIS season.
+
+    Rises with games played, so the archive hands over on its own. Defined here
+    rather than inline so the diagnostic view in divergence.py reports the same
+    number the projection actually used - a second copy would drift, and a view
+    that disagrees with the model it is describing is worse than no view.
+    """
+    return played_games / (played_games + 4.0)
+
+
 @dataclass
 class PlayerModel:
     strength: TeamStrength
@@ -489,11 +517,11 @@ class PlayerModel:
         if recent is not None:
             return recent                             # last-5 form, best signal
         if played_games > 0:
-            observed = min(1.0, starts / played_games)
+            observed = observed_start_rate(starts, played_games)
             # blend with last season until this season has a real sample
             if prior_p and prior_p.get("minutes"):
-                prior_rate = min(1.0, prior_p["minutes"] / (38 * 90.0) * 1.25)
-                w = played_games / (played_games + 4.0)
+                prior_rate = archive_start_rate(prior_p)
+                w = prior_blend_weight(played_games)
                 rate = w * observed + (1 - w) * prior_rate
             else:
                 rate = observed
@@ -537,7 +565,7 @@ class PlayerModel:
         if prior_p and prior_p.get("minutes"):
             # No live history at all - a summer signing from abroad, say. The
             # archive is all there is.
-            return min(1.0, prior_p["minutes"] / (38 * 90.0) * 1.25)
+            return archive_start_rate(prior_p)
         return 0.5 if played_games == 0 else 0.0
 
     def start_rate(self, e):

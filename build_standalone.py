@@ -16,9 +16,57 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # build. Order matters only in that dependencies must exist before use, and the
 # import machinery below execs them into one package namespace, so alphabetical
 # is fine.
-MODULES = sorted(
-    f[:-3] for f in os.listdir(os.path.join(HERE, "fplbrain"))
-    if f.endswith(".py") and f != "__init__.py"
+def _module_order(names, folder):
+    """Modules in an order where a dependency is always exec'd before its user.
+
+    The bundle rebuilds the package by exec'ing each module in sequence, so a
+    module doing `from .model import x` at import time needs model already in
+    sys.modules. Plain alphabetical order does not guarantee that - `sim` and
+    `report` only work because s and r happen to fall after m - and the failure
+    is the worst kind: locally the real fplbrain/ package sits next to app.py,
+    so Python quietly satisfies the import from disk and everything passes,
+    while on a host that ships only app.py there is nothing to fall back to.
+    """
+    src = {}
+    for n in names:
+        with open(os.path.join(folder, n + ".py"), encoding="utf-8") as f:
+            src[n] = f.read()
+    deps = {}
+    for n in names:
+        found = set()
+        for line in src[n].splitlines():
+            stripped = line.strip()
+            if line[:1].isspace():        # indented = imported lazily, inside a
+                continue                  # function, so ordering cannot matter
+            for other in names:
+                if other == n:
+                    continue
+                if (stripped.startswith(f"from .{other} import")
+                        or stripped.startswith(f"from . import {other}")):
+                    found.add(other)
+        deps[n] = found
+    out, seen = [], set()
+
+    def visit(n, trail=()):
+        if n in seen:
+            return
+        if n in trail:                    # a cycle cannot be ordered; say so
+            raise RuntimeError("circular import between modules: "
+                               + " -> ".join(trail + (n,)))
+        for d in sorted(deps[n]):
+            visit(d, trail + (n,))
+        seen.add(n)
+        out.append(n)
+
+    for n in sorted(names):
+        visit(n)
+    return out
+
+
+MODULES = _module_order(
+    sorted(f[:-3] for f in os.listdir(os.path.join(HERE, "fplbrain"))
+           if f.endswith(".py") and f != "__init__.py"),
+    os.path.join(HERE, "fplbrain"),
 )
 # Where the bundle lands depends on which layout you are in. The repo keeps
 # app.py at the root next to this script; the older working tree kept it in a

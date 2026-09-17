@@ -1482,6 +1482,27 @@ def compute(force=False, for_team=None):
         log(f"Could not read the top managers ({exc}).")
 
     # ------------------------------------------------------------------
+    # Past against present, side by side.
+    #
+    # Every projection fuses the archive prior with this season's record, and
+    # the fusion is where a stale half stops being visible - see divergence.py.
+    # Reported, never applied: the blend's own handover is correct in general,
+    # and a person can tell WHY two sources disagree where the formula cannot.
+    # ------------------------------------------------------------------
+    from fplbrain import divergence as divmod
+    divergence_view = None
+    try:
+        divergence_view = divmod.compare(bs["elements"], pprior or {}, ts.games, short)
+        for _side in ("rising", "fading"):
+            for _r in divergence_view.get(_side, []):
+                _r["pos"] = POS_NAME.get(_r["pos"], "")
+        log(f"Past vs present: {divergence_view['notable']} of "
+            f"{divergence_view['checked']} players disagree by "
+            f"{divergence_view['threshold']:.2f} or more.")
+    except Exception as exc:
+        log(f"Past-vs-present view unavailable ({exc}).")
+
+    # ------------------------------------------------------------------
     # The second unit: hold the goal and judge the maths against it.
     #
     # Everything above is a calculator - it answers the question it was asked
@@ -1529,6 +1550,7 @@ def compute(force=False, for_team=None):
         squad_source=source, bank=round(bank, 1), squad_value=round(squad_value, 1),
         squad_problems=squad_problems,
         phase=phase, phase_note=phase_note, noting=noting, elite=elite_view,
+        divergence=divergence_view,
         squad_resolved=squad_resolved,
         my_squad=(mysq["players"] if mysq else None),
         team_cards=team_cards,
