@@ -455,6 +455,7 @@ def compute(force=False, for_team=None):
     # and third keepers project as starters too, and the cheap one looks like a
     # bargain first choice.
     pm.calibrate_depth(bs["elements"])
+    pm.total_players = int(bs.get("total_players") or 0)
     views = {g: fm.team_view(fx, g) for g in span}
 
     # --- your squad -------------------------------------------------------
@@ -623,7 +624,7 @@ def compute(force=False, for_team=None):
                         avg_start_mins=max(45.0, min(90.0, exp_min / max(0.05, p_start_est))),
                         fixtures=fxs, base_lambda=ts.base_lambda,
                         pen_share=penalty_uplift(e), sp_share=setpiece_uplift(e),
-                        calibration=mult.get(POS_NAME[p["pos"]], 1.0))
+                        calibration=pm.project(e, fxs)["sim_scale"])
         d = sim.run(n=runs, seed=pid)
         d.pop("samples", None)
         dists[pid] = d

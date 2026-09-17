@@ -506,6 +506,59 @@ def fixture_correction(fixtures):
     return sum(vals) / len(vals) if vals else 0.0
 
 
+# What the transfer market knows that the model does not.
+#
+# Before every deadline millions of managers react to press conferences, leaked
+# lineups and training reports, usually hours or days before FPL's own injury
+# flags move. That reaction is visible as a change in ownership, and the model
+# never looked at it.
+#
+# Measured walk-forward on 2025/26 (market_fit.py), fitted on odd gameweeks and
+# judged on even ones so the figures are out of sample: adding the market term
+# lifts explained variance in real points from 10.2% to 12.8%, and it moves the
+# projection toward the truth in every band. Players losing more than a tenth of
+# their owners before a deadline scored 1.71 against a model expectation of 3.05.
+#
+# The fitted coefficients were +3.75 per unit of ownership share lost and +5.76
+# per unit gained. The buying side overshot out of sample (it pushed the top band
+# to 4.76 against an actual 4.01), so it is shrunk to 4.0 here, and the whole
+# term is capped so a stampede on one player cannot swamp everything else the
+# model knows about him.
+MARKET_DUMP = 3.75
+MARKET_BUY = 4.0
+MARKET_CAP = 1.5
+# The market speaks to the NEXT deadline. A week further out it is half as
+# relevant - news gets reversed, knocks heal - and beyond that it is ignored.
+MARKET_DECAY = {0: 1.0, 1: 0.5}
+
+
+def market_share(e, total_players):
+    """Net ownership change this gameweek as a share of current owners.
+
+    Early in the week the counts are partial, so the signal is smaller than it
+    will be by the deadline. That is the safe direction to be wrong in.
+    """
+    if not total_players:
+        return 0.0
+    try:
+        owners = float(e.get("selected_by_percent") or 0) / 100.0 * float(total_players)
+        net = float(e.get("transfers_in_event") or 0) - float(e.get("transfers_out_event") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    if owners < 1000:
+        return 0.0          # a handful of owners makes the ratio meaningless
+    return max(-0.5, min(0.5, net / owners))
+
+
+def market_adjustment(e, total_players, gw_offset=0):
+    w = MARKET_DECAY.get(gw_offset, 0.0)
+    if not w:
+        return 0.0
+    n = market_share(e, total_players)
+    adj = MARKET_DUMP * n if n < 0 else MARKET_BUY * n
+    return w * max(-MARKET_CAP, min(MARKET_CAP, adj))
+
+
 def archive_start_rate(prior_p):
     """Start rate implied by the archive prior alone - the PAST view.
 
@@ -544,6 +597,7 @@ class PlayerModel:
     place_share: dict = field(default_factory=dict)   # {element_id: share of his club's
                                                       # starting places, see
                                                       # calibrate_depth()}
+    total_players: int = 0                            # FPL managers, for the market term
     live_is_last_season: bool = True                  # do the live minutes/starts still
                                                       # describe LAST season? True until
                                                       # FPL rolls the counters over at the
@@ -887,7 +941,8 @@ class PlayerModel:
 
             parts["bonus"] += self.expected_bonus(r["bps90"], exp_min) * att_mult ** 0.5
 
-        total = sum(parts.values())
+        raw = sum(parts.values())
+        total = raw
         # Close the measured fixture-difficulty gap - see FIXTURE_ADJ. Scaled by
         # the share of this projection that actually depends on the opponent,
         # because appearance points do not: a hard game does not make a nailed
@@ -896,8 +951,17 @@ class PlayerModel:
             fixture_share = max(0.0, total - parts.get("appearance", 0.0)) / total
             total += fixture_correction(fixtures_for_team) * fixture_share
         total *= self.calibration.get(POS_NAME[pos], 1.0)
-        return dict(ep=max(0.0, total), p_appear=p_appear, p60=p60, exp_min=exp_min,
-                    parts=parts, rates=r, n_fix=len(fixtures_for_team))
+        total += market_adjustment(e, self.total_players, gw_offset)
+        total = max(0.0, total)
+        # The simulator samples from the raw rates and knows nothing about the
+        # corrections above. Hand it the single number that turns its raw
+        # distribution into this one. Leaving that out is how the simulator once
+        # silently ignored calibration, and the armband, ceiling and floor all
+        # quietly ran on numbers the page no longer showed.
+        sim_scale = (total / raw) if raw > 0 else 1.0
+        return dict(ep=total, p_appear=p_appear, p60=p60, exp_min=exp_min,
+                    parts=parts, rates=r, n_fix=len(fixtures_for_team),
+                    sim_scale=sim_scale, market=market_share(e, self.total_players))
 
     def project_horizon(self, e, team_views, gws):
         """EP for each gameweek in `gws`. team_views = {gw: fixture_model.team_view(...)}"""
