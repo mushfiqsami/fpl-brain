@@ -450,6 +450,54 @@ def compute(force=False, for_team=None):
     log(phase_note)
     pm = PlayerModel(ts, fm, calibration=mult, player_prior=pprior,
                      live_is_last_season=(phase == PHASE_PRESEASON))
+    # Recent form for the learned correction layer (see LEARNED in model.py).
+    #
+    # The layer was fitted on a projection whose start rate came from the last
+    # five gameweeks, plus last-week and last-three minutes and points. None of
+    # that was ever fed to the live model - start_rates sat empty, so the live
+    # projection was slower to notice a dropped player than even the backtests
+    # that validated it. Both are built here from the per-gameweek live endpoint,
+    # one call a gameweek, and they must be in place before calibrate_depth
+    # because the depth chart is shared out from these start rates.
+    #
+    # The window ends at the last FULLY scored gameweek, not the one before the
+    # next deadline: mid-gameweek, a half-played week would read as a benching for
+    # everyone yet to kick off. Three complete gameweeks are needed; before that
+    # the layer stays off and the structural model runs alone.
+    learned_note = None
+    scored = sorted(e["id"] for e in evs if _gw_fully_scored(e["id"], fx))
+    if phase != PHASE_PRESEASON and len(scored) >= 3:
+        anchor = scored[-1]
+        window = [g for g in range(max(1, anchor - 4), anchor + 1)]
+        per_gw = {}
+        try:
+            for g in window:
+                rows = cl.live(g, force=force).get("elements") or []
+                per_gw[g] = {int(r["id"]): r.get("stats") or {} for r in rows}
+        except Exception as exc:
+            per_gw = {}
+            log(f"Recent form unavailable, learned layer off ({exc}).")
+        if len(per_gw) == len(window):
+            def _stat(g, eid, k):
+                try:
+                    return float(per_gw[g].get(eid, {}).get(k) or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+            last3 = window[-3:]
+            recent, starts5 = {}, {}
+            for e in bs["elements"]:
+                eid = e["id"]
+                s5 = sum(min(1.0, _stat(g, eid, "starts")) for g in window) / len(window)
+                starts5[eid] = s5
+                recent[eid] = dict(
+                    min_l1=_stat(anchor, eid, "minutes"),
+                    min_l3=sum(_stat(g, eid, "minutes") for g in last3) / len(last3),
+                    pts_l3=sum(_stat(g, eid, "total_points") for g in last3) / len(last3),
+                    start_l5=s5)
+            pm.start_rates = starts5
+            pm.recent = recent
+            learned_note = f"GW{window[0]}-{anchor}"
+            log(f"Learned correction layer on, reading form from GW{window[0]}-{anchor}.")
     # Only one keeper per club can play, so their start probabilities have to be
     # shared out rather than assessed one at a time. Without this a club's second
     # and third keepers project as starters too, and the cheap one looks like a
@@ -1613,6 +1661,7 @@ def compute(force=False, for_team=None):
         squad_problems=squad_problems,
         phase=phase, phase_note=phase_note, noting=noting, elite=elite_view,
         divergence=divergence_view, votes=votes_view,
+        learned_layer=learned_note,
         squad_resolved=squad_resolved,
         my_squad=(mysq["players"] if mysq else None),
         team_cards=team_cards,

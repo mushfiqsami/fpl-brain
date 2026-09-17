@@ -559,6 +559,53 @@ def market_adjustment(e, total_players, gw_offset=0):
     return w * max(-MARKET_CAP, min(MARKET_CAP, adj))
 
 
+# The learned correction layer.
+#
+# Every earlier improvement here was hand-built. This one is fitted: a correction
+# learned from where the structural projection was wrong across 2025/26, using
+# things the structure cannot see - the transfer market before the deadline,
+# ownership, price, and recent minutes, points and starts. The projection stays
+# the backbone (weight "slope"); the layer only learns what to add to it.
+#
+# Validated the way it will be used (learn_rolling2.py): for each gameweek from 12
+# to 38 the layer was refitted on earlier gameweeks only, a full legal GBP100m
+# squad was built from it and from the plain projection, and both were scored on
+# what actually happened. The layer won by +5.15 points a gameweek (se 2.00, 2.6
+# standard errors), about +196 a season, and the squads it picked were no more
+# template - average XI ownership 21 percent against the model's 22. Letting the
+# layer ignore the projection entirely scored +6.6 but at 1.8 standard errors,
+# with ownership drifting to 27 percent, so the backbone form was chosen. Out of
+# sample the gain holds across the planning horizon (+0.16 of explained variance
+# for next week, +0.12 four weeks out) and from GW4-5, which it was never trained
+# on (0.199 -> 0.299).
+#
+# The weights only mean anything applied to the projection they were fitted
+# against: recent-starts based (start_rates set from the last five gameweeks),
+# with no injury flags, no fixture or market correction and no calibration. That
+# is rebuilt exactly in _learned(). Flags then scale the result, so an injured
+# player still falls to what his flags say. Several weights look odd in
+# isolation - the start-rate term is negative - because they correct a projection
+# that already leans on start rate; read them as a set, not one by one.
+LEARNED = {
+    "slope": 0.7397,
+    "intercept": -0.9,
+    "market": 1.485,
+    "own": -0.191,
+    "price": 0.1506,
+    "home": -0.0127,
+    "fdr": -0.0768,
+    "min_l1": 0.0144,
+    "min_l3": 0.0187,
+    "pts_l3": 0.0171,
+    "start_l5": -1.7163,
+    "pos_gk": -0.3128,
+    "pos_def": 0.2089,
+    "pos_mid": 0.015,
+    "pos_fwd": 0.0889
+}
+LEARNED_MIN_P_APPEAR = 0.15     # the layer was fitted only on players this likely to feature
+
+
 def archive_start_rate(prior_p):
     """Start rate implied by the archive prior alone - the PAST view.
 
@@ -598,6 +645,7 @@ class PlayerModel:
                                                       # starting places, see
                                                       # calibrate_depth()}
     total_players: int = 0                            # FPL managers, for the market term
+    recent: dict = field(default_factory=dict)        # {element_id: last-GW minutes/points/starts}, see LEARNED
     live_is_last_season: bool = True                  # do the live minutes/starts still
                                                       # describe LAST season? True until
                                                       # FPL rolls the counters over at the
@@ -785,7 +833,7 @@ class PlayerModel:
         self.place_share = share
         return share
 
-    def minutes_profile(self, e, gw_offset=0):
+    def minutes_profile(self, e, gw_offset=0, ignore_flags=False):
         """Returns (p_appear, p60, expected_minutes).
 
         This is the single biggest driver of FPL points and the place most
@@ -794,7 +842,7 @@ class PlayerModel:
         `gw_offset` is how many gameweeks ahead this is being asked about. A
         flag describes the next match only, so further out it is relaxed toward
         full availability - see FLAG_RECOVERY."""
-        p_avail = self.availability(e, gw_offset)
+        p_avail = 1.0 if ignore_flags else self.availability(e, gw_offset)
         if p_avail <= 0:
             return 0.0, 0.0, 0.0
 
@@ -888,23 +936,12 @@ class PlayerModel:
         return _logistic(bps90, L, k, x0) * min(1.0, exp_min / 90.0)
 
     # -- the main event ------------------------------------------------------
-    def project(self, e, fixtures_for_team, gw_offset=0):
-        """Expected FPL points for one player in one gameweek.
-        `fixtures_for_team` is a list, so doubles add and blanks return 0.
-        `gw_offset` releases injury/suspension flags further out - see above."""
-        pos = e["element_type"]
-        p_appear, p60, exp_min = self.minutes_profile(e, gw_offset)
-        if p_appear <= 0 or not fixtures_for_team:
-            return dict(ep=0.0, p_appear=p_appear, p60=p60, exp_min=0.0,
-                        parts={}, n_fix=len(fixtures_for_team))
-
-        r = self.rates(e)
+    def _parts(self, e, pos, r, fixtures_for_team, p_appear, p60, exp_min):
+        """Expected points by scoring component, for a given minutes profile."""
         pen = penalty_uplift(e)
         spa = setpiece_uplift(e)
-        total = 0.0
         parts = dict(appearance=0.0, goals=0.0, assists=0.0, cs=0.0,
                      conceded=0.0, saves=0.0, defcon=0.0, bonus=0.0)
-
         for fx in fixtures_for_team:
             att_mult = fx["xg_for"] / self.strength.base_lambda
             mins_share = exp_min / 90.0
@@ -941,8 +978,54 @@ class PlayerModel:
 
             parts["bonus"] += self.expected_bonus(r["bps90"], exp_min) * att_mult ** 0.5
 
+        return parts
+
+    def _learned(self, e, pos, r, fixtures_for_team, gw_offset):
+        """The learned correction, or None when it should not be used - see LEARNED."""
+        rec = self.recent.get(e["id"]) if self.recent else None
+        if rec is None or not fixtures_for_team:
+            return None
+        pa, p60, em = self.minutes_profile(e, gw_offset, ignore_flags=True)
+        if pa <= LEARNED_MIN_P_APPEAR:
+            return None
+        base = sum(self._parts(e, pos, r, fixtures_for_team, pa, p60, em).values())
+        n = len(fixtures_for_team)
+        feats = dict(
+            market=market_share(e, self.total_players),
+            own=float(e.get("selected_by_percent") or 0) / 100.0,
+            price=float(e.get("now_cost") or 0) / 10.0,
+            home=sum(1.0 for f in fixtures_for_team if f.get("home")) / n,
+            fdr=sum(float(f.get("difficulty") or 3) for f in fixtures_for_team) / n,
+            min_l1=rec["min_l1"], min_l3=rec["min_l3"], pts_l3=rec["pts_l3"],
+            start_l5=rec["start_l5"],
+            pos_gk=float(pos == 1), pos_def=float(pos == 2),
+            pos_mid=float(pos == 3), pos_fwd=float(pos == 4))
+        val = LEARNED["slope"] * base + LEARNED["intercept"] + sum(
+            LEARNED[k] * v for k, v in feats.items())
+        return max(0.0, val) * self.availability(e, gw_offset)
+
+    def project(self, e, fixtures_for_team, gw_offset=0):
+        """Expected FPL points for one player in one gameweek.
+        `fixtures_for_team` is a list, so doubles add and blanks return 0.
+        `gw_offset` releases injury/suspension flags further out - see above."""
+        pos = e["element_type"]
+        p_appear, p60, exp_min = self.minutes_profile(e, gw_offset)
+        if p_appear <= 0 or not fixtures_for_team:
+            return dict(ep=0.0, p_appear=p_appear, p60=p60, exp_min=0.0,
+                        parts={}, n_fix=len(fixtures_for_team))
+
+        r = self.rates(e)
+        parts = self._parts(e, pos, r, fixtures_for_team, p_appear, p60, exp_min)
         raw = sum(parts.values())
+        learned = self._learned(e, pos, r, fixtures_for_team, gw_offset)
+        if learned is not None:
+            sim_scale = (learned / raw) if raw > 0 else 1.0
+            return dict(ep=learned, p_appear=p_appear, p60=p60, exp_min=exp_min,
+                        parts=parts, rates=r, n_fix=len(fixtures_for_team),
+                        sim_scale=sim_scale, market=market_share(e, self.total_players),
+                        learned=True)
         total = raw
+
         # Close the measured fixture-difficulty gap - see FIXTURE_ADJ. Scaled by
         # the share of this projection that actually depends on the opponent,
         # because appearance points do not: a hard game does not make a nailed

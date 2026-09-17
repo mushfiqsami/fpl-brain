@@ -277,6 +277,29 @@ season, 2.3 se. The continuous ep x (1 - ownership) rule beat highest
 projection by +41, 1.4 se - not significant. The app therefore shows both a
 POINTS and a RANK captain rather than switching.
 
+**The learned correction layer is the largest single gain measured**
+(`learn_data.py` builds the data, `learn_rolling2.py` is the validation). A
+correction fitted on where the projection was wrong, using the transfer market,
+ownership, price, venue, FDR and recent minutes/points/starts, with the
+projection kept as the backbone. Refitted each gameweek on earlier gameweeks
+only, then used to build a full legal squad scored on real points, GW12-38:
+**+5.15 a gameweek (se 2.00, 2.6 sd), about +196 a season**, 18 weeks won to 8
+in the free-form variant, and no drift toward the template (XI ownership 21%
+against 22%). A free-form version that may ignore the projection scored +6.6 but
+at 1.8 sd with ownership rising to 27%, so the backbone form ships. Gain holds
+four gameweeks out and from GW4-5 (never trained on). The live model had never
+used recent playing time at all (`start_rates` was empty) - most of the gain is
+noticing who is and is not playing sooner. It does NOT improve captaincy.
+
+The weights are only valid on the projection they were fitted against:
+recent-start-rate based, no flags, no fixture/market correction, no
+calibration. `_learned()` rebuilds exactly that and applies flags afterwards as
+a multiplier. Parity with the validated predictions on GW20 of 2025/26: mean
+difference 0.011, 96.5% within 0.05 (the rest are players with under 1,000
+owners, where the live market term is deliberately zeroed). Refit the
+coefficients with the scripts above once enough 2026/27 is played, and re-check
+parity after any change to `_parts()` or the minutes model.
+
 **The transfer market is the best signal the model was missing**
 (`market_fit.py`). Net ownership change before a deadline, fitted on odd
 gameweeks and judged on even: explained variance 10.2% -> 12.8%. Players losing
