@@ -537,6 +537,20 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
     </div>
 
     <div class="panel">
+      <h2>The three votes <span class="tag" id="vttag"></span></h2>
+      <div class="body" style="padding-bottom:0">
+        <p class="note" style="border:none"><b>V1 past</b> is the archive, three seasons deep.
+          <b>V2 present</b> is this season&rsquo;s own record. <b>V3 future</b> is the projection
+          ahead. A player needs <b>two yeses, and the present must be one of them</b> &mdash; a
+          pedigree that is not showing up now, and an outlook built partly on that same pedigree,
+          are not two independent pieces of evidence. The bar for each is the median for that
+          position among players who actually play. Nothing here changes a projection; it decides
+          who gets offered.</p>
+      </div>
+      <div id="votelist"></div>
+    </div>
+
+    <div class="panel">
       <h2>Past against present <span class="tag" id="dvtag"></span></h2>
       <div class="body" style="padding-bottom:0">
         <p class="note" style="border:none">Every projection blends the archive baseline with this
@@ -956,7 +970,7 @@ function render(){
   document.getElementById('caveats').innerHTML=(D.caveats||[]).map(c=>
     `<div class="note">${esc(c)}</div>`).join('');
 
-  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawElite();drawDivergence();drawTeams();drawTeamCards();loadSquad();
+  drawBrain();drawHealth();drawData();drawDream();drawRoute();drawChips();drawTargets();drawFixtures();drawUpdates();drawElite();drawDivergence();drawVotes();drawTeams();drawTeamCards();loadSquad();
   document.getElementById('cfg_entry').value=D.entry_id||'';
   fetch('/api/lan').then(r=>r.json()).then(j=>{
     document.getElementById('lanurl').textContent=j.url||'not available';}).catch(()=>{});
@@ -1315,6 +1329,37 @@ function drawChips(){
 /* ---------- updates ---------- */
 let UPSORT='balance';
 function setUpsort(k){UPSORT=k;drawUpdates();}
+function drawVotes(){
+  const box=document.getElementById('votelist'); if(!box)return;
+  const V=D&&D.votes; const tag=document.getElementById('vttag');
+  if(!V||!V.usable){ box.innerHTML='<div class="body"><p class="note" style="border:none">'
+    +'Too early in the season for the present to vote &mdash; needs '
+    +((V&&V.min_minutes)||270)+' minutes played.</p></div>';
+    if(tag)tag.textContent=''; return; }
+  if(tag)tag.textContent=V.qualified+' qualify';
+  const dot=b=>b?'<b class="num" style="color:var(--mint)">YES</b>'
+                :'<b class="num" style="color:var(--dim)">no</b>';
+  const row=r=>`<div class="prw" style="grid-template-columns:1fr 62px 62px 62px 88px">
+    <div class="who"><b>${esc(r.name)}</b>
+      <div class="sub">${esc(r.club)} &middot; ${esc(r.pos)} &middot; £${r.price}m
+        &middot; ${esc(r.why)}</div></div>
+    <div class="epcell">${dot(r.v1)}<s>past</s></div>
+    <div class="epcell">${dot(r.v2)}<s>present</s></div>
+    <div class="epcell">${dot(r.v3)}<s>future</s></div>
+    <div class="epcell"><b class="num" style="color:${r.ok?'var(--mint)':'var(--amber)'}">${
+      r.ok?'QUALIFIES':'OUT'}</b><s>verdict</s></div></div>`;
+  let h='';
+  if((V.failing||[]).length){
+    h+='<div class="sechead">In your squad, failing the rule</div>'
+      +V.failing.map(row).join('');
+  }
+  const passing=(V.mine||[]).filter(r=>r.ok);
+  if(passing.length){
+    h+='<div class="sechead">In your squad, qualifying</div>'+passing.map(row).join('');
+  }
+  if(!h)h='<div class="body"><p class="note" style="border:none">No squad loaded.</p></div>';
+  box.innerHTML=h;
+}
 function drawDivergence(){
   const box=document.getElementById('divlist'); if(!box)return;
   const V=D&&D.divergence;

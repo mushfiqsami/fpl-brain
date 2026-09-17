@@ -1482,6 +1482,43 @@ def compute(force=False, for_team=None):
         log(f"Could not read the top managers ({exc}).")
 
     # ------------------------------------------------------------------
+    # The three votes. See vote.py for the rule and why the present is
+    # mandatory rather than merely one vote of three.
+    #
+    # Reported, and applied to selection only - no projection changes. A player
+    # who fails still carries the expected points he always had; he is simply
+    # not offered as a pick.
+    # ------------------------------------------------------------------
+    from fplbrain import vote as votemod
+    votes_view = None
+    try:
+        _ep_gw = {pid: (sum(ep[pid].get(g, 0.0) for g in horizon) / max(1, len(horizon)))
+                  for pid in ep}
+        _rows, _vmeta = votemod.assess(bs["elements"], pprior or {}, _ep_gw)
+        if _rows:
+            def _vrow(pid):
+                r = _rows.get(pid)
+                if not r:
+                    return None
+                return dict(r, pos=POS_NAME.get(r["pos"], ""),
+                            club=short.get(by_id[pid]["club_id"], "") if pid in by_id else "",
+                            why=votemod.reason(r))
+            mine = [v for v in (_vrow(pid) for pid in current) if v]
+            votes_view = dict(
+                usable=_vmeta["usable"], qualified=_vmeta["qualified"],
+                reference=_vmeta["reference"], min_minutes=_vmeta["min_minutes"],
+                bars={POS_NAME[p_]: dict(past=round(_vmeta["bars"]["past"][p_], 2),
+                                         now=round(_vmeta["bars"]["now"][p_], 2),
+                                         future=round(_vmeta["bars"]["future"][p_], 2))
+                      for p_ in (1, 2, 3, 4)},
+                mine=sorted(mine, key=lambda r: (r["ok"], r["now"])),
+                failing=[r for r in mine if not r["ok"]])
+            log(f"Three votes: {_vmeta['qualified']} players qualify; "
+                f"{len(votes_view['failing'])} in your squad do not.")
+    except Exception as exc:
+        log(f"Vote view unavailable ({exc}).")
+
+    # ------------------------------------------------------------------
     # Past against present, side by side.
     #
     # Every projection fuses the archive prior with this season's record, and
@@ -1550,7 +1587,7 @@ def compute(force=False, for_team=None):
         squad_source=source, bank=round(bank, 1), squad_value=round(squad_value, 1),
         squad_problems=squad_problems,
         phase=phase, phase_note=phase_note, noting=noting, elite=elite_view,
-        divergence=divergence_view,
+        divergence=divergence_view, votes=votes_view,
         squad_resolved=squad_resolved,
         my_squad=(mysq["players"] if mysq else None),
         team_cards=team_cards,
