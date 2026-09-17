@@ -45,6 +45,7 @@ def main(test_gws=tuple(range(6, 38)), season="2025-26"):
             continue
     cache = {}
     tmpl, diff, best = [], [], []
+    cont, projrule = [], []
     RAW_T, RAW_D, OWN_T, OWN_D = [], [], [], []
 
     for gw in test_gws:
@@ -104,6 +105,8 @@ def main(test_gws=tuple(range(6, 38)), season="2025-26"):
         d_pool = [i for i in xi if share.get(i, 0.0) < 0.10] or xi  # under 10% owned
         d = max(d_pool, key=lambda i: ep[i][gw])
         tmpl.append(edge(t)); diff.append(edge(d))
+        cont.append(edge(max(xi, key=lambda i: ep[i][gw] * (1.0 - min(1.0, share.get(i, 0.0))))))
+        projrule.append(edge(max(xi, key=lambda i: ep[i][gw])))
         best.append(max(edge(i) for i in xi))
         RAW_T.append(actual.get(t,0.0)); RAW_D.append(actual.get(d,0.0))
         OWN_T.append(share.get(t,0.0)); OWN_D.append(share.get(d,0.0))
@@ -131,6 +134,14 @@ def main(test_gws=tuple(range(6, 38)), season="2025-26"):
                else "no significant raw-points penalty")
     print("     raw difference %+.2f (se %.2f) -> %s"
           % (statistics.fmean(rd), rse, verdict))
+    for lab, v in (("highest projection (current rule)", projrule),
+                   ("projection x (1 - ownership)", cont)):
+        print("  %-36s %.2f a gameweek, %.0f a season" % (lab, statistics.fmean(v), statistics.fmean(v) * 38))
+    cd = [a - b for a, b in zip(cont, projrule)]
+    cse = statistics.pstdev(cd) / len(cd) ** 0.5
+    print("  continuous rule minus current: %+.2f (se %.2f) = %+.0f a season, %s"
+          % (statistics.fmean(cd), cse, statistics.fmean(cd) * 38,
+             "SIGNIFICANT" if abs(statistics.fmean(cd)) > 1.96 * cse else "not significant"))
     dd = [a - b for a, b in zip(diff, tmpl)]
     se = statistics.pstdev(dd) / len(dd) ** 0.5
     m = statistics.fmean(dd)

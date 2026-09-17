@@ -768,11 +768,35 @@ def compute(force=False, for_team=None):
         rest = [c for c in cands if c["id"] != best["id"]]
         cap = best["id"]
         vice = max(rest, key=lambda p: p.get("cap_score", p["ep"]))["id"] if rest else None
+    # The rank captain: the same score, discounted by how much of the field
+    # already owns him. Rank is your total minus everyone else's, and a player
+    # owned by two thirds of the field contributes to both sides of that
+    # subtraction - his haul lifts millions of managers with you.
+    #
+    # Measured walk-forward on 2025/26 (rank_test.py), in points won over the
+    # field: a differential captain under 10% owned beat the most-owned one by
+    # +58 a season, significant at 2.3 standard errors. The continuous rule used
+    # here beat "highest projection" by +41 a season, but at 1.4 standard errors
+    # that is not significant, and differentials score fewer raw points (3.66
+    # against 5.44). So it is offered beside the points captain, not substituted
+    # for him: it is the better pick for climbing, the points pick is the safer
+    # pick for a points total, and which of those matters this week is the
+    # manager's call.
+    def _owned(c):
+        try:
+            return min(1.0, float(c["element"].get("selected_by_percent") or 0) / 100.0)
+        except (TypeError, ValueError, KeyError):
+            return 0.0
+    rank_cap = (max(cands, key=lambda c: c.get("cap_score", c["ep"]) * (1.0 - _owned(c)))["id"]
+                if cands else None)
     captain_table = [dict(name=c["name"], club=c["club"], ep=round(c["ep"], 2),
                           ceiling=c.get("ceiling", 0), floor=c.get("floor", 0),
                           p_haul=round(c.get("p_haul", 0), 3),
                           score=round(c.get("cap_score", c["ep"]), 2),
-                          chosen=(c["id"] == cap)) for c in cands]
+                          owned=round(_owned(c), 3),
+                          rank_score=round(c.get("cap_score", c["ep"]) * (1.0 - _owned(c)), 2),
+                          chosen=(c["id"] == cap),
+                          rank_pick=(c["id"] == rank_cap)) for c in cands]
 
     # ------------------------------------------------------------------
     # What a good and a bad week actually look like.

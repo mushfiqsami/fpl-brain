@@ -211,9 +211,22 @@ header{
 
 /* ---------- captain comparison ---------- */
 .captab{display:flex;flex-direction:column;gap:8px}
-.caprow{display:grid;grid-template-columns:1fr 120px 66px;gap:11px;align-items:center;
+.caprow{display:grid;grid-template-columns:1fr 120px 58px 58px;gap:11px;align-items:center;
   padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.16)}
 .caprow.pick{border-color:var(--violet);background:rgba(139,124,246,.09)}
+.pill.r{background:var(--turf);color:#08130C}
+@media (max-width:560px){
+  .caprow{grid-template-columns:1fr 50px 50px;gap:8px}
+  .caprow .dist{display:none}
+  /* the vote and divergence rows set their columns inline for desktop; on a
+     phone the fixed columns alone are wider than the screen */
+  #votelist .prw{grid-template-columns:1fr 34px 34px 34px 62px !important;gap:6px}
+  #votelist .prw .num{font-size:12px}
+  #votelist .prw .epcell s{font-size:7.5px;letter-spacing:0}
+  #divlist .prw{grid-template-columns:1fr 42px 42px 46px !important;gap:6px}
+  #divlist .prw .num{font-size:12px}
+  #votelist .prw .sub,#divlist .prw .sub{white-space:normal}
+}
 
 /* ---------- fixtures ---------- */
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -531,7 +544,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
           <b>Model</b> is what the projection actually uses: the two blended and shrunk toward a
           positional average by how many minutes each rests on, so two good games do not send
           someone to the top.</p>
-        <p class="note" id="dnote" style="border:none;color:var(--amber)"></p>
+        <p class="note" id="dnote" style="border:none;color:var(--sodium)"></p>
       </div>
       <div class="scroll" id="datagrid"></div>
     </div>
@@ -819,14 +832,14 @@ function render(){
       <div class="num" style="white-space:nowrap">
         <s style="color:var(--dim);font-size:11px">exp ${r.projected.toFixed(1)}</s>
         <b style="margin-left:7px">${r.actual.toFixed(0)}</b>
-        <s style="margin-left:7px;color:${r.delta>=0?'var(--mint)':'var(--coral)'}">${r.delta>=0?'+':''}${r.delta.toFixed(1)}</s>
+        <s style="margin-left:7px;color:${r.delta>=0?'var(--turf)':'var(--coral)'}">${r.delta>=0?'+':''}${r.delta.toFixed(1)}</s>
       </div></div>`;
     c.innerHTML=`<div class="call"><div class="top"><span class="eyebrow">Noting, not acting</span></div>
       <div class="verdict hold">GW${N.gw} is being played</div>
       <div class="why">${esc(D.phase_note||'')} Below is how your squad is doing against what the
         model expected of it — the record, not a recommendation.</div>
       <div style="margin-top:12px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
-        <div><div class="eyebrow" style="color:var(--mint)">Shining</div>
+        <div><div class="eyebrow" style="color:var(--turf)">Shining</div>
           ${shine.length?shine.map(row).join(''):'<div class="note" style="border:none">Nobody has beaten expectation yet.</div>'}</div>
         <div><div class="eyebrow" style="color:var(--coral)">Struggling</div>
           ${strug.length?strug.map(row).join(''):'<div class="note" style="border:none">Nobody has fallen notably short.</div>'}</div>
@@ -950,12 +963,14 @@ function render(){
   const ct=D.captain_table||[];
   document.getElementById('captains').innerHTML=ct.length?'<div class="captab">'+
     ct.map(r=>`<div class="caprow ${r.chosen?'pick':''}">
-      <div><b>${esc(r.name)}</b>${r.chosen?'<span class="pill c">PICK</span>':''}
+      <div><b>${esc(r.name)}</b>${r.chosen?'<span class="pill c">POINTS</span>':''}${r.rank_pick?'<span class="pill r">RANK</span>':''}
         <div class="sub" style="color:var(--dim);font-size:11.5px">${esc(r.club)} ·
-          ${Math.round(r.p_haul*100)}% chance of 10+</div></div>
+          ${Math.round(r.p_haul*100)}% chance of 10+ · ${Math.round((r.owned||0)*100)}% owned</div></div>
       ${rangeBar({floor:r.floor,ceiling:r.ceiling,ep:r.ep,id:'c'+esc(r.name)},maxTop)}
-      <div class="epcell"><b class="num">${r.score.toFixed(1)}</b><s>score</s></div>
+      <div class="epcell"><b class="num">${r.score.toFixed(1)}</b><s>points</s></div>
+      <div class="epcell"><b class="num">${(r.rank_score||0).toFixed(1)}</b><s>rank</s></div>
     </div>`).join('')+'</div>'
+    +'<p class="note" style="border:none"><b>POINTS</b> is the best expected score. <b>RANK</b> discounts by how much of the field owns him: when a 70%-owned captain hauls, most managers haul with you and you climb nowhere. Measured on last season, a low-owned captain beat the most-owned one by <b>+58 a season</b> in rank terms, but scores fewer raw points. Chasing a points total, take POINTS; climbing, take RANK.</p>'
     :'<p class="note" style="border:none">No shortlist yet.</p>';
 
   /* ---- weakest ---- */
@@ -1016,7 +1031,7 @@ function drawTeamCards(){
     return `<div class="prw" style="grid-template-columns:1fr 116px 74px auto;${
       c.active?'background:rgba(242,169,59,.06)':''}">
       <div class="who"><b>${esc(c.name)}</b>${c.active?'<span class="pill pen">OPEN</span>':''}
-        ${c.synced?'<span class="pill" style="background:rgba(94,209,138,.15);color:var(--mint)" title="Synced live from the official FPL app">SYNCED</span>':''}
+        ${c.synced?'<span class="pill" style="background:rgba(94,209,138,.15);color:var(--turf)" title="Synced live from the official FPL app">SYNCED</span>':''}
         <div class="sub">£${c.value}m squad · £${c.bank}m bank · ${c.free_transfers} FT ·
           C: ${esc(c.captain)}</div>
         ${c.risk?`<span class="flagline">${c.risk} player${c.risk>1?'s':''} at start risk</span>`:''}
@@ -1144,7 +1159,7 @@ function drawHealth(){
   box.innerHTML='<div class="plist">'+rows.map(([k,v,ok,note])=>`
     <div class="prw" style="grid-template-columns:1fr 150px">
       <div class="who"><b>${esc(k)}</b><div class="sub">${esc(note)}</div></div>
-      <div class="epcell"><b class="num" style="color:${ok?'var(--mint)':'var(--coral)'}">${esc(v)}</b>
+      <div class="epcell"><b class="num" style="color:${ok?'var(--turf)':'var(--coral)'}">${esc(v)}</b>
         <s>${ok?'ok':'check'}</s></div></div>`).join('')+'</div>';
 }
 
@@ -1199,7 +1214,7 @@ function drawBrain(){
         forecast above uses the second, because a projection is what the model hopes for and this
         is what the hoping was worth. Source: ${esc(B.measured_note)}.</p>`:''}
 
-      <p class="note" style="border:none;color:${r.verdict==='on'?'var(--dim)':'var(--amber)'}">
+      <p class="note" style="border:none;color:${r.verdict==='on'?'var(--dim)':'var(--sodium)'}">
         ${esc(r.note)}</p>
 
       ${l.items.length?`<div class="sechead">Where the points could come from</div>
@@ -1337,7 +1352,7 @@ function drawVotes(){
     +((V&&V.min_minutes)||270)+' minutes played.</p></div>';
     if(tag)tag.textContent=''; return; }
   if(tag)tag.textContent=V.qualified+' qualify';
-  const dot=b=>b?'<b class="num" style="color:var(--mint)">YES</b>'
+  const dot=b=>b?'<b class="num" style="color:var(--turf)">YES</b>'
                 :'<b class="num" style="color:var(--dim)">no</b>';
   const row=r=>`<div class="prw" style="grid-template-columns:1fr 62px 62px 62px 88px">
     <div class="who"><b>${esc(r.name)}</b>
@@ -1346,7 +1361,7 @@ function drawVotes(){
     <div class="epcell">${dot(r.v1)}<s>past</s></div>
     <div class="epcell">${dot(r.v2)}<s>present</s></div>
     <div class="epcell">${dot(r.v3)}<s>future</s></div>
-    <div class="epcell"><b class="num" style="color:${r.ok?'var(--mint)':'var(--amber)'}">${
+    <div class="epcell"><b class="num" style="color:${r.ok?'var(--turf)':'var(--sodium)'}">${
       r.ok?'QUALIFIES':'OUT'}</b><s>verdict</s></div></div>`;
   let h='';
   if((V.failing||[]).length){
@@ -1374,7 +1389,7 @@ function drawDivergence(){
         &middot; ${r.starts} starts, ${r.minutes} min</div></div>
     <div class="epcell"><b class="num">${pct(r.past)}</b><s>past</s></div>
     <div class="epcell"><b class="num">${pct(r.now)}</b><s>now</s></div>
-    <div class="epcell"><b class="num" style="color:${r.gap>0?'var(--mint)':'var(--amber)'}">${
+    <div class="epcell"><b class="num" style="color:${r.gap>0?'var(--turf)':'var(--sodium)'}">${
       r.gap>0?'+':''}${pct(r.gap)}</b><s>gap</s></div></div>`;
   let h='';
   if((V.rising||[]).length){
@@ -1411,7 +1426,7 @@ function drawElite(){
       +E.fading.map(r=>row(r,' · 5GW '+r.ep)).join('');
   }
   h+='<div class="sechead">Most owned among the top '+E.managers+'</div>'
-    +(E.owned||[]).map(r=>row(r, r.mine?' · <b style="color:var(--mint)">you own</b>':'')).join('');
+    +(E.owned||[]).map(r=>row(r, r.mine?' · <b style="color:var(--turf)">you own</b>':'')).join('');
   box.innerHTML=h;
 }
 function drawUpdates(){
@@ -1439,7 +1454,7 @@ function drawUpdates(){
           r.d_ceiling?` · ceiling ${sign(r.d_ceiling)}`:''}</div>
         ${r.news?`<div class="flagline${r.status!=='a'?' bad':''}">${esc(r.news)}</div>`:''}</div>
       <div class="epcell"><b class="num" style="color:${
-        r.balance>0?'var(--mint)':(r.balance<0?'var(--coral)':'var(--dim)')}">${
+        r.balance>0?'var(--turf)':(r.balance<0?'var(--coral)':'var(--dim)')}">${
         sign(r.balance)}</b><s>balance</s></div>
       <div class="epcell"><b class="num">${r.aps.toFixed(2)}</b><s>score</s></div>
     </div>`).join('')+'</div>';
@@ -1453,7 +1468,7 @@ function drawUpdates(){
             r.chance!=null?` · ${r.chance}% to play`:''}</div>
           ${r.news?`<div class="flagline${r.status!=='a'?' bad':''}">${esc(r.news)}</div>`:''}</div>
         <div class="epcell"><b class="num" style="color:${
-          r.price_change>0?'var(--mint)':(r.price_change<0?'var(--coral)':'var(--dim)')}">${
+          r.price_change>0?'var(--turf)':(r.price_change<0?'var(--coral)':'var(--dim)')}">${
           r.price_change?sign(r.price_change):'—'}</b><s>£m this GW</s></div>
       </div>`).join('')+'</div>'
     :'<div class="body"><p class="note" style="border:none">No price moves or team news right now.</p></div>';
@@ -1668,15 +1683,15 @@ function sqEcho(i){
      fall back to the local guess only for a row edited since the last run. */
   const srv=(SRVMATCH&&SRVMATCH[i]);
   if(srv&&nrm(srv.typed||'')===nrm(nm)&&nrm(srv.typed_club||'')===nrm(ci?ci.value:'')){
-    el.innerHTML=`<span style="color:${srv.exact?'var(--mint)':'var(--amber)'}">`
+    el.innerHTML=`<span style="color:${srv.exact?'var(--turf)':'var(--sodium)'}">`
       +`${srv.exact?'✓':'?'} ${esc(srv.name)}</span>`
       +`<span style="color:var(--dim)"> ${esc(srv.club)} · ${esc(srv.pos)} · £${srv.price}m</span>`
-      +(srv.exact?'':'<span style="color:var(--amber)"> — weak match, check this is who you meant</span>');
+      +(srv.exact?'':'<span style="color:var(--sodium)"> — weak match, check this is who you meant</span>');
     sqTotals();return;
   }
   const hit=sqFind(nm,ci?ci.value:'');
   el.innerHTML=hit
-    ?`<span style="color:var(--mint)">✓ ${esc(hit.n)}</span>
+    ?`<span style="color:var(--turf)">✓ ${esc(hit.n)}</span>
       <span style="color:var(--dim)">${esc(hit.c)} · ${esc(hit.pos)} · £${hit.p}m</span>
       <span style="color:var(--dim)"> · not yet confirmed by the model</span>`
     :'<span style="color:var(--coral)">no match — check the spelling or add the club</span>';
@@ -1707,7 +1722,7 @@ function sqTotals(){
   const over=clubs&&Object.entries(clubs).filter(([,n])=>n>3);
   const tot=cost+bank;
   box.innerHTML=`<div class="frow" style="gap:14px;flex-wrap:wrap">
-    <div><b class="num" style="color:${filled===15?'var(--mint)':'var(--amber)'}">${filled}/15</b>
+    <div><b class="num" style="color:${filled===15?'var(--turf)':'var(--sodium)'}">${filled}/15</b>
       <s style="color:var(--dim);font-size:11px"> players</s></div>
     <div><b class="num">£${cost.toFixed(1)}m</b><s style="color:var(--dim);font-size:11px"> squad</s></div>
     <div><b class="num" style="color:${tot>100.05?'var(--coral)':'var(--chalk)'}">£${tot.toFixed(1)}m</b>
