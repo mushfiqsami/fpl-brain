@@ -623,6 +623,11 @@ def observed_start_rate(starts, played_games):
     return min(1.0, starts / played_games)
 
 
+# Games of pseudo-evidence the archive start-rate carries against this season's own
+# starts. Module-level so prior_weight_test.py can sweep it.
+PRIOR_BLEND_GAMES = 4.0
+
+
 def prior_blend_weight(played_games):
     """How much of the blended start rate comes from THIS season.
 
@@ -631,7 +636,7 @@ def prior_blend_weight(played_games):
     number the projection actually used - a second copy would drift, and a view
     that disagrees with the model it is describing is worse than no view.
     """
-    return played_games / (played_games + 4.0)
+    return played_games / (played_games + PRIOR_BLEND_GAMES)
 
 
 @dataclass
@@ -652,16 +657,24 @@ class PlayerModel:
                                                       # first deadline. season_phase() in
                                                       # dashboard.py decides and sets it.
     player_prior: dict = field(default_factory=dict)  # {code: last-season per-90 rates}
-    # Pseudo-minutes of credit given to last season's rates. Tested lowering this to
-    # 150 on the single GW3->GW4 transition and it looked like a clear win - but
-    # extended to every real transition played so far (GW1->2, GW2->3, GW3->4) via
-    # model_ab_test.py, that reversed: mean correlation across all three is a wash
-    # (700: 0.2881 vs 150: 0.2875) and mean actual points from the best squad each
-    # would have picked favours 700 clearly (53.3 vs 46.3 real points/gw). The single-
-    # transition result was noise from one gameweek, not a real effect. Left at 700
-    # until model_ab_test.py shows a lower value winning across multiple gameweeks,
-    # not one - re-run it as more gameweeks are played rather than re-guess this.
-    prior_minutes_weight: float = 700.0
+    # Pseudo-minutes of credit given to past seasons' rates. Lowered 700 -> 150 so
+    # this season's own football outweighs the archive much sooner (a player on 900
+    # minutes is now 86% this season, not 56%).
+    #
+    # History, because this number has flip-flopped on thin evidence before: a
+    # 3-transition test (live GW1-4) favoured 700, a 1-transition test favoured
+    # 150, and both were noise. Settled on two independent, wider tests:
+    #   prior_weight_test.py  2025-26 replayed with a prior built only from the two
+    #     seasons before it, 9 gameweeks across the season:
+    #       K=700  rho 0.2421  top-30 4.39  best-squad 49.7
+    #       K=150  rho 0.2438  top-30 4.46  best-squad 52.0
+    #   model_ab_test.py      live 2026-27 GW1-7 (more transitions than the test
+    #     that originally said 700):  K=700 rho 0.2363, best-squad 51.0
+    #                                  K=150 rho 0.2379, best-squad 58.2
+    # Both lean the same way and neither is a large effect - correlation moves in
+    # the third decimal - so this is "no worse, probably better, and what was
+    # asked for", not a breakthrough. Re-run both harnesses before moving it again.
+    prior_minutes_weight: float = 150.0
 
     # -- minutes ------------------------------------------------------------
     def raw_start_rate(self, e):

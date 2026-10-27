@@ -2061,15 +2061,28 @@ def route(method, path, raw=b""):
         return 404, J, json.dumps({"error": "not found"})
 
     if method == "POST":
+        if len(raw or b"") > 20000:          # a 15-player squad is well under 2 KB
+            return 413, J, json.dumps({"error": "request too large"})
         try:
             body = json.loads((raw or b"{}").decode() or "{}")
         except Exception:
             body = {}
         if p == "/api/refresh":
-            threading.Thread(target=run_job, kwargs={"force": bool(body.get("force"))},
+            # Anyone can press refresh on the public site, and every run re-reads
+            # the FPL API and re-simulates the league. Visitors get at most one
+            # run per five minutes and cannot force a cache bypass; the owner
+            # (FPL_ADMIN=1) is unrestricted.
+            with LOCK:
+                recent = (time.time() - (STATE.get("updated") or 0)) < 300
+            if not ADMIN and recent:
+                return 200, J, json.dumps({"ok": True, "throttled": True})
+            threading.Thread(target=run_job,
+                             kwargs={"force": bool(body.get("force")) and ADMIN},
                              daemon=True).start()
             return 200, J, json.dumps({"ok": True})
         if p == "/api/analyse":
+            if sum(1 for j in JOBS.values() if j["status"] in ("queued", "running")) >= 6:
+                return 429, J, json.dumps({"error": "Busy right now - try again in a minute."})
             jid = start_adhoc(body)
             if not jid:
                 return 400, J, json.dumps({"error": "send players or an entry_id"})

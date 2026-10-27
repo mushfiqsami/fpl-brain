@@ -404,3 +404,27 @@ first guess:**
   at all until `fplbrain/momentum.py` started recording real snapshots this session — before that,
   any "test" of it was silently running on a neutral fallback and proved nothing (see
   `momentum.for_gw()`'s docstring).
+
+## Public mode and the prior weight (added with the anonymous-site rewrite)
+
+**The deployed site is anonymous per visitor.** `ADMIN` (env `FPL_ADMIN=1`) is the old single-owner
+mode; without it `run_job()` computes `compute(anonymous=True)` (no squad, no saved teams, no
+`config.json` entry id) and `/api/data` serves that. A visitor's 15 lives in *their* browser
+(`localStorage.fpl_me`) and is sent to `POST /api/analyse` -> job id -> poll `GET /api/analyse/<id>`
+(path segment, not a query string: the FastAPI handler passes only `request.url.path` to `route()`).
+`compute(adhoc=...)` analyses it with one at a time (`_ADHOC_SLOT`) and keeps the result in
+`_MEM_CACHE` only. `/api/squad`, `/api/teams`, `/api/config` POST and `/api/calibrate` return 403
+unless admin. **Row order matters:** `squad.resolve()` reads row *i* as slot *i* (2 GK, 5 DEF, 5 MID,
+3 FWD), so `_fingerprint` keeps players in order - it used to sort them and reused one ordering's
+answer for another.
+
+**`prior_minutes_weight` is 150, not 700.** Measured on two independent datasets, not one
+transition: `prior_weight_test.py` (2025-26 replayed with a prior built only from the two seasons
+before it, 9 gameweeks) and `model_ab_test.py` (live 2026-27 GW1-7).
+K=700 -> 150: rho 0.2421 -> 0.2438 (archive), 0.2363 -> 0.2379 (live); best-squad real points
+49.7 -> 52.0 (archive), 51.0 -> 58.2 (live). Small and consistent, not a breakthrough. The earlier
+"700 wins" came from only 3 live transitions. `PRIOR_BLEND_GAMES` (start-rate blend, 4.0) was swept
+too (4/2/1) and was mixed - correlation preferred 4, top-30 preferred 2 - so it was left alone.
+**The team-strength prior (`prior_weight_games` = 6) is untested**: the archive harness has no team
+prior and the live harness would leak future results into past gameweeks. Do not change it without
+building a clean test.
