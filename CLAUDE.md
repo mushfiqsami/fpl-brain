@@ -160,6 +160,17 @@ a redeploy needs no network. **`api.py`** wraps the FPL API with a TTL cache und
 and falls back to a stale cache rather than dying mid-gameweek. **`history.py`** diffs successive
 runs to surface players the model is changing its mind about.
 
+**`model_v2.py` — experimental, current-season-only.** Not a fork of `model.py`, a deliberately
+different hypothesis: no archive prior, no Dixon-Coles, rates built purely from this season's own
+data. `project_v2()` / `project_v2_horizon()` are the entry points; `fplbrain/momentum.py` records
+weekly transfer snapshots (`transfers_in_event`/`transfers_out_event`/ownership) because FPL's API
+only ever exposes those live, so testing a past gameweek's momentum without a recorded snapshot
+would leak today's numbers into history. **`model_ab_test.py`** (live season, few gameweeks) and
+**`archive_ab_test.py`** (full completed season, real historical transfer data) are the harness —
+any tuning idea for either model goes through one of these across every available gameweek before
+it ships; a single favorable week is not evidence (see Measured findings below, this bit its own
+tail twice in one session).
+
 ## Serving
 
 One `route(method, path, body)` function serves both modes. Locally it is behind
@@ -191,6 +202,12 @@ stale service worker and a failed deploy look identical.
   history). Nothing may depend on it existing; that is why the prior and config are embedded.
 - The comments in this codebase explain *why*, usually citing the bug that motivated the code.
   Match that when editing — and when a comment explains a trap, check you are not reintroducing it.
+- **`optimise.build_squad`/`plan_route` can return a garbage squad on infeasibility instead of
+  raising.** Found twice in one session: a pool too thin at one position (or over-constrained
+  `locked` list) makes the solver's status `Infeasible`, but the function still returns whatever the
+  LP variables held — a squad with the wrong player count, not an error. Always check
+  `res["status"] == "Optimal"` before trusting `res["squad"]`; never assume a returned list is legal
+  just because it came back.
 
 ## Measured findings — do not re-derive these from intuition
 
@@ -324,3 +341,66 @@ easy-vs-hard separation is 1.26 points a start; the model gave 0.43. An earlier
 compare within-player to within-player. Widening team ratings does not fix it
 (the cause is that appearance points ignore the opponent); FIXTURE_ADJ closes
 about half the gap, deliberately.
+
+**Context for any target.** 2025/26 was won with **2538**. A target above that is
+not ambitious, it is beyond what the best of ten million entrants managed.
+
+**No sustained weekly average approaches 100, let alone 90+.** 2025/26's winner needed 66.8/GW
+(2538÷38). Every squad this project has built and simulated — V1, V2, archive-tested, live-tested —
+lands in the high-50s to mid-60s per gameweek, matching that benchmark. An early-season manager
+sitting at 100+/GW after 4 games is real (checked against the live league table), but that is a
+small-sample realized average, not evidence a forward projection should target it — season-long sd
+per gameweek is ~21 points, so a hot 3-4 week run is expected noise, not a repeatable rate.
+
+**V2 (`model_v2.py`) findings — each tested on real results, several reversed a plausible-sounding
+first guess:**
+
+- **Recency decay lost to a flat average.** An invented exponential decay (0.55/gameweek back) on a
+  player's own points history scored worse than weighting every game equally, on both the live
+  3-gameweek sample (0.236 vs 0.267 correlation) and would have on the archive had it been re-run
+  there. One good-looking result on a single transition (GW3→GW4) is what motivated trying it —
+  extended to GW2-4 it lost 1 of 3 weeks and the aggregate real-points figure (46.3 vs V1's 53.3).
+- **Raw points averaged flat lost to averaging xG+xA (`expected_goal_involvements`) for MID/FWD.**
+  Archive, 10 gameweeks: 0.2556 → 0.2657 correlation, 58.1 → 63.4 mean best-squad real points — the
+  single biggest win of the whole V2 experiment. Raw points carry luck (bonus ties, deflections,
+  red cards) that xGI does not.
+- **GK's base rate is appearance + fixture ONLY — every defensive stat tried made it worse.** Clean
+  sheets alone 0.1585, clean sheets + saves 0.1647, clean sheets + DC 0.1585, appearance+fixture
+  alone **0.1812**. A clean sheet depends on the whole team's defense, not the keeper's own history,
+  and V2 has no team-strength model (that is V1's job) — forcing a per-keeper signal in from a noisy,
+  low-sample stat hurt more than it helped.
+- **DEF's base rate is a BLEND of clean-sheet/defensive-contribution AND xGI — neither alone is
+  enough.** Archive, DEF only: CS+DC alone 0.2279, xGI alone 0.2233, the blend **0.2328** — a clear
+  win, not a tiebreak, because a defender can score either way (clean-sheet specialist or attacking
+  full-back are both real archetypes) and the single-signal versions only capture one.
+- **Cross-position scale was never calibrated and it broke a top-N shortlist outright.** Each
+  position's rate was tuned separately for within-position correlation and never checked against the
+  others — a pool-wide "top 60 by form" came back 47 defenders, 0 goalkeepers. Real average points
+  per game played (GW1-4): GK 3.51, DEF 3.06, MID 2.86, FWD 2.86. Each formula's own raw mean:
+  GK 2.00, DEF 5.55, MID 3.00, FWD 3.68. `POS_CALIBRATION` rescales each position's raw rate to the
+  real figure; this alone lifted V2's live-sample correlation to **0.3370**, its best result overall.
+- **Consistency-penalty, peak-reward, and points<6-counts-as-0 gating all lost to the plain flat
+  average.** Full archive test: consistency-penalized 0.2536 rho / 56.4 pts, peak-rewarding 0.2488 /
+  53.4, gated-to-zero 0.2258 / 61.1 — all worse on correlation than flat averaging's 0.2556-0.2657,
+  none a clean win even where a secondary metric ticked up slightly. A trend-line fit through 3-7
+  noisy weekly scores (line/curve shape classification) lost worse still: 0.2276 vs 0.2556.
+- **Ceiling-blended captaincy (mean + 0.35×(season-high − mean)) lost to picking highest raw EP.**
+  Archive test, captain's own points before doubling: highest-EP rule 6.60/GW, ceiling-blend 5.70/GW.
+  The proxy (a player's single best real game this season) is too noisy to act as a ceiling — unlike
+  V1's simulated p90, it is just "the biggest fluke week so far," and pulls the pick toward one-off
+  outliers rather than a repeatable tail.
+- **Squad-level ceiling-chasing for a big cumulative target loses the same way single-week
+  ceiling-chasing does — confirmed again on a harder question.** Aiming for 300 points over 3 real
+  gameweeks (GW5-7), six different constructions were built and simulated (20-50k iterations each):
+  mean-optimal (P(300+)=2.12%), ceiling-tilted (2.00%), light fixture-stack (1.42%), top-8-table-only
+  (0.95%), premium-stacked (0.75%), and an extreme correlated stack (8 of 15 players forced into 2
+  matches, real EP sacrificed on purpose) actually the worst of all at 0.25% and a lower max (336)
+  than the mean-optimal squad's average case (357). Concentrating a squad into fewer independent
+  outcomes shrinks the number of ways to accumulate a big total rather than fattening the tail — it
+  only makes one bad match hurt more.
+- **The V1+momentum hybrid is the one addition that has cleared a real multi-week test.** Archive,
+  10 gameweeks: hybrid 0.2553 rho / 56.8 real pts vs plain V1's 0.2525 / 56.3 — beats it on both,
+  consistently, not from one lucky week. Momentum could not be tested on the live 2025/26 gameweeks
+  at all until `fplbrain/momentum.py` started recording real snapshots this session — before that,
+  any "test" of it was silently running on a neutral fallback and proved nothing (see
+  `momentum.for_gw()`'s docstring).

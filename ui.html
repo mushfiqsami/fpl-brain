@@ -43,6 +43,74 @@ body{
   overscroll-behavior-y:contain;min-height:100vh
 }
 
+/* ---------- MY TEAM (FPL-style home) ---------- */
+.mystrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px}
+.mystat{background:var(--slate);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.mystat .v{font:800 20px/1.1 var(--mono);margin-top:5px}
+.mystat .s{font-size:11px;color:var(--dim);margin-top:3px}
+.fplpitch{position:relative;border-radius:14px;border:1px solid var(--line);padding:14px 6px 10px;
+  background:
+   repeating-linear-gradient(180deg,rgba(53,196,107,.20) 0 46px,rgba(53,196,107,.12) 46px 92px),
+   #0F2A1C;overflow:hidden}
+.fplpitch:before{content:"";position:absolute;left:8%;right:8%;top:0;height:62px;
+  border:2px solid rgba(232,236,245,.18);border-top:none;border-radius:0 0 8px 8px;pointer-events:none}
+.fplpitch:after{content:"";position:absolute;left:50%;top:50%;width:86px;height:86px;margin:-43px;
+  border:2px solid rgba(232,236,245,.12);border-radius:50%;pointer-events:none}
+.prow{display:flex;justify-content:space-evenly;align-items:flex-start;margin:6px 0 14px;position:relative;z-index:1}
+.pcard{width:74px;text-align:center;cursor:pointer;position:relative}
+.pcard svg.shirt{width:46px;height:42px;display:block;margin:0 auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.pcard .nm{background:#fff;color:#1b1640;font:700 11px/1.15 var(--sans);padding:3px 2px;border-radius:4px 4px 0 0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard .ft{background:#3a1c5b;color:#fff;font:600 10px/1.2 var(--mono);padding:2px 2px;border-radius:0 0 4px 4px}
+.pcard .ft b{color:#F7D774}
+.pcard.sel .nm{outline:2px solid var(--sodium)}
+.pcard .arm{position:absolute;top:-2px;right:6px;width:17px;height:17px;border-radius:50%;
+  background:#111;color:#fff;font:800 10px/17px var(--sans);border:1.5px solid #fff}
+.pcard .arm.v{background:#555}
+.pcard .rk{position:absolute;top:-2px;left:6px;width:15px;height:15px;border-radius:50%;
+  background:var(--coral);color:#fff;font:800 10px/15px var(--sans)}
+.benchrow{display:flex;justify-content:space-evenly;background:rgba(11,16,32,.55);border-radius:10px;padding:10px 0 4px;margin-top:2px}
+.benchrow .cap{position:absolute}
+.sugg{background:var(--slate);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.sugg .sw{display:grid;grid-template-columns:1fr 34px 1fr;gap:8px;align-items:center}
+.sugg .who{background:var(--slate2);border-radius:9px;padding:9px 10px;min-width:0}
+.sugg .who b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sugg .who s{text-decoration:none;color:var(--dim);font-size:11px}
+.sugg .who.out{border-left:3px solid var(--coral)}
+.sugg .who.in{border-left:3px solid var(--turf)}
+.sugg .gain{font:800 12px/1 var(--mono);color:var(--ink);background:var(--turf);border-radius:5px;padding:4px 7px;display:inline-block}
+.sugg .gain.neg{background:var(--coral);color:#fff}
+.rs{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#C9D3E8;padding:5px 0;border-top:1px solid rgba(38,49,79,.6)}
+.rs i{font-style:normal;flex:0 0 auto;font:700 9px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;
+  background:var(--slate2);color:var(--sodium);border-radius:4px;padding:4px 5px;margin-top:2px;min-width:58px;text-align:center}
+.rs i.risk{color:var(--coral)}.rs i.minutes{color:var(--turf)}.rs i.ceiling{color:var(--violet)}
+.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.pipe .st{background:var(--slate2);border-radius:10px;padding:10px 11px;position:relative}
+.pipe .st .n{font:800 10px/1 var(--mono);color:var(--sodium)}
+.pipe .st b{display:block;font-size:13px;margin:5px 0 3px}
+.pipe .st span{font-size:11.5px;color:var(--dim);line-height:1.4}
+.wf{display:grid;grid-template-columns:104px 1fr 96px;gap:8px;align-items:center;font-size:12px;padding:3px 0}
+.wf .bar{height:11px;border-radius:3px;background:var(--turf)}
+.wf .bar.neg{background:var(--coral)}
+.wf .lab{color:var(--dim)}
+.wz .slot{width:68px;cursor:pointer;text-align:center}
+.wz .slot .ph{width:46px;height:42px;margin:0 auto;border:2px dashed rgba(232,236,245,.45);border-radius:9px;
+  color:rgba(232,236,245,.75);font:700 20px/38px var(--sans)}
+.wz .slot .nm{background:rgba(11,16,32,.7);color:#fff;font:600 10px/1.2 var(--sans);padding:3px 2px;border-radius:4px;margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wz .slot.act .ph{border-color:var(--sodium);color:var(--sodium)}
+.wz .slot .x{position:absolute;margin:-4px 0 0 20px;background:var(--coral);color:#fff;width:15px;height:15px;border-radius:50%;
+  font:800 10px/15px var(--sans)}
+.budget{height:10px;background:var(--slate2);border-radius:5px;overflow:hidden}
+.budget>div{height:100%;background:var(--turf);transition:width .2s}
+.budget.over>div{background:var(--coral)}
+.pickrow{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(38,49,79,.5);cursor:pointer;font-size:13px}
+.pickrow:hover{background:var(--slate2)}
+.pickrow.dis{opacity:.35;pointer-events:none}
+.hero{background:linear-gradient(135deg,#1B2440,#141B2E);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.hero h1{font:800 22px/1.2 var(--sans);letter-spacing:-.02em;margin-bottom:6px}
+.hero p{color:var(--dim);font-size:13.5px}
+
 /* ---------- eyebrow / label system ---------- */
 .eyebrow{font:700 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
@@ -369,6 +437,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
 <div class="wrap">
   <div class="dtabs" id="dtabs">
+    <div data-t="my" onclick="showTab('my')">My Team</div>
     <div data-t="now" onclick="showTab('now')">This week</div>
     <div data-t="teams" onclick="showTab('teams')">All teams</div>
     <div data-t="squad" onclick="showTab('squad')">Edit squad</div>
@@ -381,8 +450,11 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 
   <div id="alerts"></div>
 
+  <!-- ============== MY TEAM ============== -->
+  <div id="t-my"><div id="mybox"></div></div>
+
   <!-- ============== THIS WEEK ============== -->
-  <div id="t-now">
+  <div id="t-now" class="hidden">
     <div id="call"></div>
     <div id="brainbox"></div>
     <div id="dreambox"></div>
@@ -676,6 +748,7 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 let D=null,ALLP=[],SORT='ep5',SRVMATCH={};
 const SLOTS=[['GK',2],['DEF',5],['MID',5],['FWD',3]];
 const ICONS={
+ my:'<path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0Z"/>',
  now:'<path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/>',
  teams:'<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/>',
  squad:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
@@ -684,7 +757,7 @@ const ICONS={
  data:'<path d="M4 20V10M10 20V4M16 20v-9M22 20H2"/>',
  fixtures:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
  settings:'<circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 0 0-.2-1.8l2-1.5-2-3.4-2.3 1a8 8 0 0 0-3-1.8L14 2h-4l-.5 2.5a8 8 0 0 0-3 1.8l-2.3-1-2 3.4 2 1.5A8 8 0 0 0 4 12a8 8 0 0 0 .2 1.8l-2 1.5 2 3.4 2.3-1a8 8 0 0 0 3 1.8L10 22h4l.5-2.5a8 8 0 0 0 3-1.8l2.3 1 2-3.4-2-1.5A8 8 0 0 0 20 12Z"/>'};
-const LABELS={now:'This week',teams:'All teams',squad:'Squad',targets:'Targets',updates:'Updates',data:'Data',fixtures:'Fixtures',settings:'Settings'};
+const LABELS={my:'My Team',now:'This week',teams:'All teams',squad:'Squad',targets:'Targets',updates:'Updates',data:'Data',fixtures:'Fixtures',settings:'Settings'};
 document.getElementById('nav').innerHTML=Object.keys(ICONS).map(k=>
  `<a data-t="${k}" onclick="showTab('${k}')"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${LABELS[k]}</a>`).join('');
 
@@ -810,8 +883,271 @@ function tickCountdown(){
 }
 setInterval(tickCountdown,30000);
 
+/* =====================================================================
+   MY TEAM - the FPL "My Team" look, plus the reasoning FPL does not show.
+   Everything here reads D (the server payload). The only numbers computed
+   in the browser are sums and ratios of fields the server already sent.
+   ===================================================================== */
+const POSCOL={GK:'#E8C547',DEF:'#35C46B',MID:'#4EA8F2',FWD:'#F2545B'};
+const WZ={slots:SLOTS.flatMap(([p,n])=>Array.from({length:n},()=>({pos:p,pl:null}))),act:0,q:'',on:false,busy:false};
+
+function shirt(pos,sleeve){
+  const c=POSCOL[pos]||'#888';
+  return `<svg class="shirt" viewBox="0 0 46 42"><path d="M15 2 2 9l5 11 6-2v22h20V18l6 2 5-11L31 2c-1 5-4 7-8 7s-7-2-8-7Z"
+    fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/></svg>`;
+}
+function pcard(r,opts){
+  opts=opts||{};
+  const risk=(r.flags||[]).length||r.p_appear<0.75;
+  return `<div class="pcard${opts.sel===r.name?' sel':''}" onclick="myPick('${esc(r.name).replace(/'/g,'')}')">
+    ${r.captain?'<div class="arm">C</div>':r.vice?'<div class="arm v">V</div>':''}
+    ${risk?'<div class="rk" title="'+esc((r.flags||[]).join('; ')||'Start risk')+'">!</div>':''}
+    ${shirt(r.pos)}
+    <div class="nm">${esc(r.name)}</div>
+    <div class="ft">${esc(r.fixture||'-')}<br><b>${r.ep.toFixed(1)}</b></div>
+  </div>`;
+}
+let MYSEL=null;
+function myPick(n){MYSEL=n;drawMy();const e=document.getElementById('why');if(e)e.scrollIntoView({behavior:'smooth',block:'nearest'});}
+
+/* ---- onboarding wizard ---- */
+async function wzOpen(prefill){
+  WZ.on=true;WZ.q='';
+  WZ.slots.forEach(s=>s.pl=null);
+  if(!ALLP.length){try{ALLP=await fetch('/api/players').then(r=>r.json());}catch(e){}}
+  if(prefill&&D){
+    const rows=[...(D.xi||[]),...(D.bench||[])];
+    SLOTS.forEach(([pos])=>{
+      const mine=rows.filter(r=>r.pos===pos);
+      WZ.slots.filter(s=>s.pos===pos).forEach((s,i)=>{
+        const r=mine[i];if(!r)return;
+        s.pl=ALLP.find(a=>a.n===r.name&&a.c===r.club)||{n:r.name,c:r.club,pos,p:r.price};
+      });
+    });
+  }
+  WZ.act=Math.max(0,WZ.slots.findIndex(s=>!s.pl));
+  drawMy();
+}
+function wzCost(){return WZ.slots.reduce((a,s)=>a+(s.pl?s.pl.p:0),0);}
+function wzClubCount(c,skip){return WZ.slots.filter((s,i)=>i!==skip&&s.pl&&s.pl.c===c).length;}
+function wzSet(i){WZ.act=i;WZ.q='';drawMy();}
+function wzClear(i,ev){if(ev)ev.stopPropagation();WZ.slots[i].pl=null;WZ.act=i;drawMy();}
+function wzAdd(idx){
+  const s=WZ.slots[WZ.act];const pl=WZ.PICKS&&WZ.PICKS[idx];if(!s||!pl)return;
+  s.pl=pl;WZ.q='';
+  const nx=WZ.slots.findIndex(x=>!x.pl);if(nx>=0)WZ.act=nx;
+  drawMy();
+}
+function wzSearch(v){WZ.q=v;drawWzList();}
+function wzListHTML(){
+  const s=WZ.slots[WZ.act];if(!s)return '';
+  const q=nrm(WZ.q);
+  const taken=new Set(WZ.slots.map(x=>x.pl&&x.pl.n+'|'+x.pl.c));
+  const left=100-wzCost()+(s.pl?s.pl.p:0);
+  let list=ALLP.filter(a=>a.pos===s.pos&&(!q||nrm(a.n+' '+a.c).includes(q)));
+  list.sort((a,b)=>b.p-a.p);
+  WZ.PICKS=list.slice(0,60);
+  return WZ.PICKS.map((a,k)=>{
+    const dup=taken.has(a.n+'|'+a.c)&&!(s.pl&&s.pl.n===a.n&&s.pl.c===a.c);
+    const club=wzClubCount(a.c,WZ.act)>=3, poor=a.p>left+1e-9;
+    const why=dup?'already picked':club?'3 from '+a.c+' already':poor?'over budget':'';
+    return `<div class="pickrow${why?' dis':''}" onclick="wzAdd(${k})">
+      <span><b>${esc(a.n)}</b> <s style="text-decoration:none;color:var(--dim);font-size:11px">${esc(a.c)}</s></span>
+      <span class="num">${why?`<s style="text-decoration:none;color:var(--coral);font-size:11px">${why}</s> `:''}£${a.p.toFixed(1)}</span></div>`;
+  }).join('')||'<div class="note" style="border:none">No match.</div>';
+}
+function drawWzList(){const e=document.getElementById('wzlist');if(e)e.innerHTML=wzListHTML();}
+async function wzSubmit(){
+  const players=WZ.slots.filter(s=>s.pl).map(s=>({name:s.pl.n,club:s.pl.c,role:''}));
+  if(players.length<15)return;
+  WZ.busy=true;drawMy();
+  await fetch('/api/squad',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({players,entry_id:'',bank:Math.max(0,Math.round((100-wzCost())*10)/10),free_transfers:1,
+      team_id:D&&D.active_team?D.active_team:null,formation:'auto',name:'My team'})});
+  try{await refreshTeamsCache();}catch(e){}
+  WZ.busy=false;WZ.on=false;
+  document.getElementById('boot').classList.remove('hidden');
+  setTimeout(poll,600);
+}
+async function wzImport(){
+  const v=((document.getElementById('wz_eid')||{}).value||'').trim();
+  if(!/^\d+$/.test(v)){document.getElementById('wzmsg').textContent='Enter the number from your FPL points-page URL.';return;}
+  document.getElementById('wzmsg').textContent='Importing…';
+  await fetch('/api/squad',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({players:[],entry_id:v,bank:0,free_transfers:1,
+      team_id:D&&D.active_team?D.active_team:null,formation:'auto',name:'My team'})});
+  try{await refreshTeamsCache();}catch(e){}
+  WZ.on=false;document.getElementById('boot').classList.remove('hidden');setTimeout(poll,600);
+}
+function wizardHTML(){
+  const cost=wzCost(), n=WZ.slots.filter(s=>s.pl).length, left=100-cost, over=left<-1e-9;
+  let i=0;
+  const rows=SLOTS.map(([pos,cnt])=>{
+    const cells=Array.from({length:cnt},()=>{
+      const k=i++, s=WZ.slots[k];
+      return `<div class="slot${k===WZ.act?' act':''}" onclick="wzSet(${k})">
+        ${s.pl?shirt(pos)+`<div class="x" onclick="wzClear(${k},event)">×</div>`:'<div class="ph">+</div>'}
+        <div class="nm">${s.pl?esc(s.pl.n):pos}</div>
+        ${s.pl?`<div class="num" style="font-size:10px;color:#fff">£${s.pl.p.toFixed(1)}</div>`:''}</div>`;
+    }).join('');
+    return `<div class="prow">${cells}</div>`;
+  }).join('');
+  const actPos=(WZ.slots[WZ.act]||{}).pos||'';
+  return `<div class="hero"><div class="eyebrow">Step 1 of 2</div>
+      <h1>${D&&D.squad_source!=='none'?'Rebuild your team':'Build your team'}</h1>
+      <p>Pick your 15 the way you would in the FPL app: £100m, 2 GK · 5 DEF · 5 MID · 3 FWD, at most 3 from one club.
+      The model then scores every player, finds your best XI and captain, and tells you what to change and why.</p></div>
+    <div class="cols"><div>
+      <div class="panel"><h2>Your squad <span class="tag">${n}/15</span></h2><div class="body">
+        <div class="fplpitch wz">${rows}</div>
+        <div class="frow" style="justify-content:space-between;margin:12px 0 6px">
+          <span class="num"><b style="color:${over?'var(--coral)':'var(--turf)'}">£${left.toFixed(1)}m</b> left</span>
+          <span class="num" style="color:var(--dim)">£${cost.toFixed(1)}m of £100.0m</span></div>
+        <div class="budget${over?' over':''}"><div style="width:${Math.min(100,cost)}%"></div></div>
+        <button class="go" style="width:100%;margin-top:14px" ${n<15||over||WZ.busy?'disabled':''} onclick="wzSubmit()">
+          ${WZ.busy?'Saving…':n<15?`Pick ${15-n} more`:over?'Over budget':'Analyse my team →'}</button>
+      </div></div>
+      <div class="panel"><h2>Already have a team?</h2><div class="body">
+        <div class="frow"><input id="wz_eid" placeholder="FPL Team ID, e.g. 1234567" inputmode="numeric" style="flex:2">
+        <button class="go" style="flex:1" onclick="wzImport()">Import</button></div>
+        <p class="note" style="border:none" id="wzmsg">Find it in the URL of your points page: fantasy.premierleague.com/entry/<b>XXXXXX</b>/event/1</p>
+      </div></div>
+    </div><div>
+      <div class="panel"><h2>Choose a ${esc(actPos)} <span class="tag">slot ${WZ.act+1}</span></h2>
+        <div class="body" style="padding-bottom:0"><input id="wzq" placeholder="Search name or club" value="${esc(WZ.q)}" oninput="wzSearch(this.value)"></div>
+        <div id="wzlist" style="max-height:440px;overflow:auto;margin-top:8px">${wzListHTML()}</div></div>
+    </div></div>`;
+}
+
+/* ---- the loaded view ---- */
+function gradeBar(label,val,txt,hint,col){
+  return `<div class="wf" title="${esc(hint)}"><span class="lab">${label}</span>
+    <div style="background:var(--slate2);border-radius:3px"><div class="bar" style="width:${Math.max(2,Math.min(100,val))}%;${col?'background:'+col:''}"></div></div>
+    <b class="num" style="text-align:right">${txt}</b></div>`;
+}
+function scorecardHTML(){
+  const xi=D.xi||[], all=[...xi,...(D.bench||[])];
+  const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  const avail=mean(xi.map(r=>r.p_appear));
+  const flagged=all.filter(r=>(r.flags||[]).length);
+  const clubs={};all.forEach(r=>clubs[r.club]=(clubs[r.club]||0)+1);
+  const topClub=Object.entries(clubs).sort((a,b)=>b[1]-a[1])[0]||['-',0];
+  const own=mean(xi.map(r=>r.owned));
+  const haul=xi.reduce((a,r)=>a+(r.p_haul||0),0);
+  const benchEp=(D.bench||[]).reduce((a,r)=>a+r.ep,0);
+  const ppm=xi.reduce((a,r)=>a+r.ep5,0)/Math.max(1,xi.reduce((a,r)=>a+r.price,0));
+  return `<div class="panel"><h2>Team scorecard <span class="tag">XI, next ${(D.horizon||[]).length||5} GWs</span></h2><div class="body">
+    ${gradeBar('Start security',avail*100,(avail*100).toFixed(0)+'%','Average chance each XI player plays. 100% = everyone nailed.',avail<.8?'var(--sodium)':'')}
+    ${gradeBar('Injury / news flags',Math.min(100,flagged.length*100/5),flagged.length+' flagged','Players with a doubt, suspension or start-risk note.',flagged.length?'var(--coral)':'')}
+    ${gradeBar('Haul chances',Math.min(100,haul*100/3),haul.toFixed(1)+' expected','Sum of each XI player\'s chance of a 10+ point haul (simulated).','var(--violet)')}
+    ${gradeBar('Template ↔ differential',Math.min(100,own*2),own.toFixed(0)+'% avg owned','Low = a differential squad, high = the template everyone else owns.','')}
+    ${gradeBar('Club spread',100-(topClub[1]-1)*33,topClub[0]+' ×'+topClub[1],'Most players from one club. FPL allows 3; fewer protects you from one bad match.','')}
+    ${gradeBar('Bench cover',Math.min(100,benchEp*100/12),benchEp.toFixed(1)+' pts','Combined expected points of the four benched players.','')}
+    ${gradeBar('Points per £m',Math.min(100,ppm*100/1.2),ppm.toFixed(2),'XI expected points (5 GWs) per £m of XI price.','')}
+    ${D.xi_floor!=null?`<p class="note" style="border:none;margin-top:8px">A typical week lands between <b class="num">${D.xi_floor}</b> and
+      <b class="num">${D.xi_ceiling}</b> points (median <b class="num">${D.xi_median}</b>) from ${(D.sim_runs||0).toLocaleString()} simulated gameweeks.</p>`:''}
+  </div></div>`;
+}
+function suggestHTML(){
+  const P=D.plan;
+  if(!P||!P.out||!P.out.length){
+    return `<div class="panel"><h2>Suggested changes</h2><div class="body">
+      <div class="verdict hold" style="font-size:20px;font-weight:800;color:var(--turf)">Hold - no transfer beats keeping your squad</div>
+      <p class="note" style="border:none">The optimiser tried every legal swap within your bank and free transfers and none
+      gained enough projected points over the next ${(D.horizon||[]).length||5} gameweeks to justify the move.</p></div></div>`;
+  }
+  const gws=P.horizon_gws||D.horizon||[];
+  const gain=(P.proj_h||0)-(P.mine_h||0);
+  const cards=P.out.map((o,k)=>{
+    const i=P.inn[k], sw=(P.swaps||[])[k]||{reasons:[]};
+    const og=sw.out_gw||[], ig=sw.in_gw||[];
+    const mx=Math.max(1,...og,...ig);
+    const bw=18, gap=6, W=Math.max(1,og.length)*(bw*2+gap+8);
+    const bars=og.map((v,g)=>{
+      const x=g*(bw*2+gap+8);
+      return `<rect x="${x}" y="${50-v/mx*44}" width="${bw}" height="${v/mx*44}" rx="2" fill="#F2545B"/>
+        <rect x="${x+bw+2}" y="${50-ig[g]/mx*44}" width="${bw}" height="${ig[g]/mx*44}" rx="2" fill="#35C46B"/>
+        <text x="${x+bw}" y="62" text-anchor="middle" font-size="9" fill="#7E8AA6">${gws[g]!=null?'GW'+gws[g]:''}</text>`;
+    }).join('');
+    return `<div class="sugg"><div class="sw">
+        <div class="who out"><s>SELL · ${esc(o.pos)} · ${esc(o.club)}</s><b>${esc(o.name)}</b><s class="num">£${o.price.toFixed(1)}m · ${sw.out_fix?esc(sw.out_fix):''}</s></div>
+        <div style="text-align:center;color:var(--dim)">→</div>
+        <div class="who in"><s>BUY · ${esc(i.pos)} · ${esc(i.club)}</s><b>${esc(i.name)}</b><s class="num">£${i.price.toFixed(1)}m · ${sw.in_fix?esc(sw.in_fix):''}</s></div></div>
+      <div class="frow" style="justify-content:space-between;align-items:flex-end;margin:12px 0 4px;gap:10px">
+        <svg viewBox="0 0 ${W} 66" style="max-width:${Math.min(W,260)}px;width:100%;height:auto">${bars}</svg>
+        <div style="text-align:right"><span class="gain${(sw.gain||0)<0?' neg':''}">${(sw.gain||0)>=0?'+':''}${(sw.gain||0).toFixed(1)} pts</span>
+          <div style="font-size:10px;color:var(--dim);margin-top:5px"><span style="color:var(--coral)">■</span> ${esc(o.name)} <span style="color:var(--turf);margin-left:6px">■</span> ${esc(i.name)}</div></div></div>
+      ${(sw.reasons||[]).map(r=>`<div class="rs"><i class="${esc(r.k)}">${esc(r.k)}</i><span>${esc(r.t)}</span></div>`).join('')}
+    </div>`;
+  }).join('');
+  return `<div class="panel"><h2>Suggested changes <span class="tag">${P.out.length} transfer${P.out.length>1?'s':''}</span></h2><div class="body">
+    <div class="frow" style="gap:18px;margin-bottom:12px;flex-wrap:wrap">
+      <div><div class="eyebrow">Projected gain</div><div class="num" style="font:800 24px var(--mono);color:var(--turf)">${gain>=0?'+':''}${gain.toFixed(1)}</div></div>
+      <div><div class="eyebrow">Free transfers used</div><div class="num" style="font:800 24px var(--mono)">${P.used_ft??P.out.length}</div></div>
+      <div><div class="eyebrow">Hit cost</div><div class="num" style="font:800 24px var(--mono);color:${P.hits?'var(--coral)':'var(--chalk)'}">${P.hits?'-'+P.hits*4:'0'}</div></div></div>
+    ${cards}</div></div>`;
+}
+function whyHTML(){
+  const rows=[...(D.xi||[]),...(D.bench||[])];
+  const r=rows.find(x=>x.name===MYSEL)||rows.find(x=>x.captain)||rows[0];
+  if(!r)return '';
+  const LAB={appearance:'Appearance',goals:'Goals',assists:'Assists',cs:'Clean sheet',conceded:'Goals conceded',saves:'Saves',defcon:'Defensive actions',bonus:'Bonus'};
+  const parts=Object.entries(r.parts||{}).filter(([k,v])=>Math.abs(v)>=0.005);
+  const mx=Math.max(0.5,...parts.map(([,v])=>Math.abs(v)));
+  const tot=parts.reduce((a,[,v])=>a+v,0);
+  const wf=parts.map(([k,v])=>`<div class="wf"><span class="lab">${LAB[k]||k}</span>
+    <div><div class="bar${v<0?' neg':''}" style="width:${Math.abs(v)/mx*100}%"></div></div>
+    <b class="num" style="text-align:right">${v>=0?'+':''}${v.toFixed(2)}</b></div>`).join('');
+  return `<div class="panel" id="why"><h2>How the model thinks <span class="tag">tap any player on the pitch</span></h2><div class="body">
+    <div class="pipe">
+      <div class="st"><span class="n">1 · FIXTURE</span><b>${esc(r.fixture||'-')}</b><span>Opponent strength and venue set how many goals the model expects each side to score (Poisson with a Dixon-Coles low-score fix).</span></div>
+      <div class="st"><span class="n">2 · MINUTES</span><b>${(r.p_appear*100).toFixed(0)}% to play · ~${r.exp_min||0} min</b><span>Start rate from this club's depth chart, shared so a club cannot field more than 11.</span></div>
+      <div class="st"><span class="n">3 · FPL RULES</span><b>${tot.toFixed(2)} expected pts</b><span>Each scoring rule is priced separately, then added up - below.</span></div>
+      <div class="st"><span class="n">4 · SIMULATE</span><b>${(r.floor??0).toFixed(0)} – ${(r.ceiling??0).toFixed(0)} range</b><span>Thousands of simulated gameweeks give the spread and a ${((r.p_haul||0)*100).toFixed(0)}% chance of a 10+ haul.</span></div>
+    </div>
+    <div class="eyebrow" style="margin:4px 0 6px">${esc(r.name)} · where the ${r.ep.toFixed(1)} comes from (this gameweek, before calibration)</div>
+    ${wf||'<div class="note" style="border:none">No fixture this gameweek.</div>'}
+    <div class="eyebrow" style="margin:14px 0 4px">Next gameweeks</div>
+    <div class="frow" style="gap:6px">${(r.per_gw||[]).map((v,g)=>`<div style="flex:1;text-align:center;background:var(--slate2);border-radius:8px;padding:7px 0">
+      <div style="font-size:10px;color:var(--dim)">GW${(D.horizon||[])[g]??''}</div><b class="num">${v.toFixed(1)}</b></div>`).join('')}</div>
+  </div></div>`;
+}
+function drawMy(){
+  const box=document.getElementById('mybox');if(!box||!D)return;
+  if(WZ.on||D.squad_source==='none'||!(D.xi||[]).length){
+    if(!WZ.on){WZ.on=true;wzOpen(false);return;}
+    box.innerHTML=wizardHTML();
+    const q=document.getElementById('wzq');if(q&&document.activeElement===document.body){/* keep focus off on first paint */}
+    return;
+  }
+  const byPos=p=>(D.xi||[]).filter(r=>r.pos===p);
+  const cap=(D.xi||[]).find(r=>r.captain);
+  const dl=D.deadline?new Date(D.deadline).toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'-';
+  box.innerHTML=`
+    <div class="mystrip">
+      <div class="mystat"><div class="eyebrow">Gameweek</div><div class="v">${D.gw}</div><div class="s">${esc(dl)}</div></div>
+      <div class="mystat"><div class="eyebrow">Squad value</div><div class="v">£${(D.squad_value||0).toFixed(1)}m</div><div class="s">in the bank £${(D.bank||0).toFixed(1)}m</div></div>
+      <div class="mystat"><div class="eyebrow">Free transfers</div><div class="v">${D.free_transfers??1}</div><div class="s">${D.plan&&D.plan.out&&D.plan.out.length?D.plan.out.length+' suggested':'none needed'}</div></div>
+      <div class="mystat"><div class="eyebrow">Projected XI</div><div class="v">${(D.xi_total_c||0).toFixed(1)}</div><div class="s">captain doubled</div></div>
+      <div class="mystat"><div class="eyebrow">Captain</div><div class="v" style="font-size:16px">${cap?esc(cap.name):'-'}</div><div class="s">${cap?cap.ep.toFixed(1)+' pts · '+esc(cap.fixture||''):''}</div></div>
+    </div>
+    <div class="cols"><div>
+      <div class="panel"><h2>Starting XI <span class="tag">${esc(D.formation||'')}</span></h2><div class="body" style="padding:10px">
+        <div class="fplpitch">${['GK','DEF','MID','FWD'].map(p=>`<div class="prow">${byPos(p).map(r=>pcard(r,{sel:MYSEL})).join('')}</div>`).join('')}</div>
+        <div class="eyebrow" style="margin:12px 0 4px">Bench · autosub order</div>
+        <div class="benchrow">${(D.bench||[]).map(r=>pcard(r,{bench:1,sel:MYSEL})).join('')}</div>
+        <button class="go" style="width:100%;margin-top:12px;background:var(--slate2);color:var(--chalk)" onclick="wzOpen(true)">Rebuild / change my 15</button>
+      </div></div>
+      ${scorecardHTML()}
+    </div><div>
+      ${suggestHTML()}
+      ${whyHTML()}
+    </div></div>`;
+}
+
 function render(){
   if(!D)return;
+  try{drawMy();}catch(e){console.error('drawMy',e);}
   document.getElementById('gwchip').textContent='GW'+D.gw;
   tickCountdown();
   document.getElementById('simtag').textContent=(D.sim_runs||0).toLocaleString()+' sims';
@@ -1794,7 +2130,7 @@ async function saveSquad(){
       name:(document.getElementById('sq_name').value||'').trim()||'My team'})});
   await refreshTeamsCache();
   document.getElementById('boot').classList.remove('hidden');
-  showTab('now');setTimeout(poll,600);
+  showTab('my');setTimeout(poll,600);
 }
 async function applyAll(){
   const n=(D&&D.teams?D.teams.length:0);
@@ -1819,7 +2155,7 @@ async function applyAll(){
     body:JSON.stringify({action:'apply_all',formation:fm,roles})});
   await refreshTeamsCache();
   document.getElementById('boot').classList.remove('hidden');
-  showTab('now');setTimeout(poll,600);
+  showTab('my');setTimeout(poll,600);
 }
 async function clearSquad(){
   if(!confirm('Delete every saved team? This cannot be undone.'))return;
@@ -1864,7 +2200,7 @@ fetch('/api/config').then(r=>r.json()).then(c=>{
   document.getElementById('cfg_pw').value=c.prior_weight_games??6;
   document.getElementById('cfg_sim').value=c.sim_runs??3000;
 }).catch(()=>{});
-showTab('now');
+showTab('my');
 restoreTeamsIfNeeded().finally(poll);
 startAuto();
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}

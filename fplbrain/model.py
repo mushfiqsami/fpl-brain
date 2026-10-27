@@ -652,8 +652,16 @@ class PlayerModel:
                                                       # first deadline. season_phase() in
                                                       # dashboard.py decides and sets it.
     player_prior: dict = field(default_factory=dict)  # {code: last-season per-90 rates}
-    prior_minutes_weight: float = 700.0               # pseudo-minutes of credit given
-                                                      # to last season's rates
+    # Pseudo-minutes of credit given to last season's rates. Tested lowering this to
+    # 150 on the single GW3->GW4 transition and it looked like a clear win - but
+    # extended to every real transition played so far (GW1->2, GW2->3, GW3->4) via
+    # model_ab_test.py, that reversed: mean correlation across all three is a wash
+    # (700: 0.2881 vs 150: 0.2875) and mean actual points from the best squad each
+    # would have picked favours 700 clearly (53.3 vs 46.3 real points/gw). The single-
+    # transition result was noise from one gameweek, not a real effect. Left at 700
+    # until model_ab_test.py shows a lower value winning across multiple gameweeks,
+    # not one - re-run it as more gameweeks are played rather than re-guess this.
+    prior_minutes_weight: float = 700.0
 
     # -- minutes ------------------------------------------------------------
     def raw_start_rate(self, e):

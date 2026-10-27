@@ -435,6 +435,16 @@ def compute(force=False, for_team=None):
     # Planning still runs on `horizon`; this is a wider lens for scouting only.
     look_ahead = [g for g in range(gw + 1, gw + 1 + H) if g <= 38]
     span = sorted(set(horizon) | set(look_ahead))
+
+    # model_v2's transfer-momentum term needs THIS week's real transfer counts,
+    # and bootstrap-static only ever exposes the current ones - so record them
+    # now, every run, rather than losing them the moment the gameweek passes.
+    try:
+        from fplbrain import momentum as momentummod
+        momentummod.record(bs, gw)
+    except Exception as exc:
+        log(f"Could not record transfer-momentum snapshot ({exc}).")
+
     short = {t["id"]: t["short_name"] for t in bs["teams"]}
     names = {t["id"]: t["name"] for t in bs["teams"]}
 
@@ -629,6 +639,10 @@ def compute(force=False, for_team=None):
                          price=e["now_cost"] / 10.0,
                          sell=sell.get(pid, e["now_cost"] / 10.0),
                          ep=proj["ep"], p_appear=proj["p_appear"],
+                         # the model's own line-by-line working, so the page can
+                         # show where a projection comes from instead of asserting it
+                         parts={k: round(v, 2) for k, v in (proj.get("parts") or {}).items()},
+                         exp_min=round(proj.get("exp_min", 0.0), 0),
                          status=e.get("status", "a"), news=(e.get("news") or "").strip(),
                          owned=float(e.get("selected_by_percent") or 0),
                          element=e))
@@ -956,6 +970,7 @@ def compute(force=False, for_team=None):
                     pens=bool(penalty_uplift(e) > 0),
                     setp=bool(setpiece_uplift(e) > 0),
                     form=round(p.get("form", 0), 1),
+                    parts=p.get("parts", {}), exp_min=p.get("exp_min", 0),
                     per_gw=[round(ep[pid][g], 2) for g in horizon])
 
     order_pos = {"GK": 0, "DEF": 1, "MID": 2, "FWD": 3}
@@ -1404,6 +1419,48 @@ def compute(force=False, for_team=None):
             # trade is visible instead of confusing.
             proj_h=_horizon_total([p["id"] for p in plan["squad"]], ep, horizon, by_id),
             mine_h=_horizon_total(list(current), ep, horizon, by_id))
+
+        # Per-swap evidence, index-aligned with out/inn like everything else
+        # here. The page used to show WHO to swap with no WHY; every number a
+        # reason quotes comes from the same projection that chose the swap, so
+        # the explanation cannot disagree with the advice.
+        swaps = []
+        for o, i in pairs:
+            po, pi = by_id.get(o["id"]), by_id.get(i["id"])
+            if not po or not pi:
+                swaps.append(dict(reasons=[], gain=0.0))
+                continue
+            o_gw = [round(ep[o["id"]][g], 2) for g in horizon]
+            i_gw = [round(ep[i["id"]][g], 2) for g in horizon]
+            gain = sum(i_gw) - sum(o_gw)
+            why = []
+            why.append(dict(k="points", t=f"{pi['name']} projects {sum(i_gw):.1f} pts over the next "
+                            f"{len(horizon)} gameweeks against {sum(o_gw):.1f} for {po['name']} "
+                            f"({gain:+.1f})."))
+            of, inf = flag(po), flag(pi)
+            if of:
+                why.append(dict(k="risk", t=f"{po['name']}: {'; '.join(of)}."))
+            if pi["p_appear"] - po["p_appear"] >= 0.12:
+                why.append(dict(k="minutes", t=f"More secure minutes: {pi['p_appear']:.0%} chance to play "
+                                f"vs {po['p_appear']:.0%}."))
+            wins = sum(1 for a, b in zip(i_gw, o_gw) if a > b)
+            if len(horizon) > 1:
+                why.append(dict(k="fixtures", t=f"Ahead in {wins} of {len(horizon)} gameweeks - "
+                                f"next fixture {pi['name']} {fixlabel(pi['club_id'])}, "
+                                f"{po['name']} {fixlabel(po['club_id'])}."))
+            dp = round(by_id[i["id"]]["price"] - sell.get(o["id"], po["price"]), 1)
+            if abs(dp) >= 0.1:
+                why.append(dict(k="price", t=(f"Frees £{-dp:.1f}m for the rest of the squad." if dp < 0
+                                              else f"Costs £{dp:.1f}m more.")))
+            if pi.get("p_haul", 0) - po.get("p_haul", 0) >= 0.03:
+                why.append(dict(k="ceiling", t=f"Bigger upside: {pi.get('p_haul', 0):.0%} chance of a "
+                                f"haul vs {po.get('p_haul', 0):.0%}."))
+            swaps.append(dict(reasons=why, gain=round(gain, 2), out_gw=o_gw, in_gw=i_gw,
+                              out_ep=round(po["ep"], 2), in_ep=round(pi["ep"], 2),
+                              out_p=round(po["p_appear"], 3), in_p=round(pi["p_appear"], 3),
+                              out_fix=fixlabel(po["club_id"]), in_fix=fixlabel(pi["club_id"])))
+        plan_out["swaps"] = swaps
+        plan_out["horizon_gws"] = list(horizon)
 
     # ------------------------------------------------------------------
     # Close the self-correction loop.
