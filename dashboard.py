@@ -9,7 +9,7 @@ Why a local server instead of a plain .html file: the FPL API does not send CORS
 headers, so a browser cannot fetch it directly from a file:// page. The request is
 made here, in Python, and the result is served to your browser from localhost.
 """
-import datetime, hashlib, json, os, random, sys, threading, time, traceback, webbrowser, socket
+import datetime, hashlib, uuid, json, os, random, sys, threading, time, traceback, webbrowser, socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -343,8 +343,10 @@ def _fingerprint(bs, fx, gw, mysq, cfg, mult):
     if mysq:
         squad_sig = dict(
             entry=mysq.get("entry_id"),
-            players=sorted((p.get("name"), p.get("club"), p.get("role"))
-                           for p in (mysq.get("players") or [])),
+            # slot order, NOT sorted: resolve() reads row i as slot i (2/5/5/3),
+            # so the same 15 in a different order is a different squad
+            players=[(p.get("name"), p.get("club"), p.get("role"))
+                     for p in (mysq.get("players") or [])],
             bank=mysq.get("bank"), ft=mysq.get("free_transfers"),
             formation=mysq.get("formation"))
     payload = dict(
@@ -363,6 +365,9 @@ def _fingerprint(bs, fx, gw, mysq, cfg, mult):
                 "sim_runs", "season_target", "elite_managers")},
     )
     return hashlib.md5(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
+
+
+_MEM_CACHE = {}
 
 
 def _cached_result(key, team_key):
@@ -395,7 +400,7 @@ def _store_result(key, team_key, data):
         pass          # a cache that cannot be written must never fail a run
 
 
-def compute(force=False, for_team=None):
+def compute(force=False, for_team=None, adhoc=None, anonymous=False):
     from fplbrain.api import LiveClient
     from fplbrain.model import TeamStrength, FixtureModel, PlayerModel, POS_NAME
     from fplbrain import optimise, calibrate, seed as seedmod, squad as squadmod
@@ -528,16 +533,24 @@ def compute(force=False, for_team=None):
     # otherwise fall back to whatever was typed into My Squad. FPL does not
     # publish a team's picks until the first deadline, so before that manual
     # entry is the only way to get real advice regardless of which this is.
-    all_teams = squadmod.load_all()
-    mysq = squadmod.load_one(for_team) if for_team else squadmod.load()
+    # Public visitors never touch the owner's saved teams. `anonymous` is the
+    # generic market view (no squad at all); `adhoc` is one visitor's team, held
+    # by their browser and sent with the request, analysed and not stored.
+    if anonymous or adhoc:
+        mysq = adhoc if adhoc else None
+        all_teams = {"teams": ([mysq] if mysq else []), "active": (mysq or {}).get("id")}
+    else:
+        all_teams = squadmod.load_all()
+        mysq = squadmod.load_one(for_team) if for_team else squadmod.load()
 
     # Everything above here is cheap - a couple of cached reads and one API
     # call. Everything below is not. If the inputs are identical to the last
     # run's, the answer is too, so hand back the one already worked out.
     _key = _fingerprint(bs, fx, gw, mysq, cfg, mult)
     _team_key = for_team or (mysq or {}).get("id") or "active"
+    _private = bool(anonymous or adhoc)
     if not force:
-        _hit = _cached_result(_key, _team_key)
+        _hit = (_MEM_CACHE.get(_key) if _private else _cached_result(_key, _team_key))
         if _hit is not None:
             log("Nothing has changed since the last run - reusing it.")
             return _hit
@@ -594,7 +607,8 @@ def compute(force=False, for_team=None):
     # Legacy fallback: a global entry_id in config.json, for anyone still using
     # the pre-per-team mechanism and whose active team has not been given its
     # own entry_id. New teams should set entry_id on the team itself instead.
-    eid = cfg.get("entry_id")
+    # never for a public visitor: that id is the owner's own team
+    eid = None if (anonymous or adhoc) else cfg.get("entry_id")
     if eid and source == "none":
         try:
             log(f"Loading your team ({eid})...")
@@ -1805,7 +1819,14 @@ def compute(force=False, for_team=None):
                   pos=POS_NAME[p["pos"]]) for p in pool],
             key=lambda x: (x["c"], x["n"])),
         generated=time.strftime("%d %b %Y, %H:%M"))
-    _store_result(_key, _team_key, _result)
+    _result["personal"] = bool(adhoc)
+    if _private:
+        # in memory only: a visitor's squad is never written to the host's disk
+        _MEM_CACHE[_key] = _result
+        while len(_MEM_CACHE) > 24:
+            _MEM_CACHE.pop(next(iter(_MEM_CACHE)))
+    else:
+        _store_result(_key, _team_key, _result)
     return _result
 
 
@@ -1838,6 +1859,64 @@ def warm_other_teams():
             continue          # one bad team must not stop the rest
 
 
+# ---------------------------------------------------------------------------
+# Public mode. The deployed site is for anyone who opens the link, so nothing
+# the owner saved on the server may be shown or edited by a visitor. A visitor's
+# squad lives in their own browser and is sent with each request; the server
+# analyses it and keeps it only in a small in-memory cache. Set FPL_ADMIN=1 to
+# get the old single-owner behaviour (saved teams, editor, settings).
+# ---------------------------------------------------------------------------
+ADMIN = os.environ.get("FPL_ADMIN") == "1"
+JOBS = {}                                  # job id -> {status, log, data, error}
+_ADHOC_SLOT = threading.Semaphore(1)       # one visitor analysis at a time: small host
+_NO_ADMIN = (403, "application/json", json.dumps({"error": "disabled on the public site"}))
+
+
+def _clean_adhoc(body):
+    pl = []
+    for x in (body.get("players") or [])[:15]:
+        n = str(x.get("name") or "").strip()[:60]
+        if n:
+            pl.append({"name": n, "club": str(x.get("club") or "").strip()[:8], "role": ""})
+    eid = str(body.get("entry_id") or "").strip()
+    if not eid.isdigit():
+        eid = ""
+
+    def num(v, lo, hi, dflt):
+        try:
+            return max(lo, min(hi, float(v)))
+        except (TypeError, ValueError):
+            return dflt
+    return {"id": "adhoc", "name": "My team", "players": pl,
+            "bank": num(body.get("bank"), 0.0, 100.0, 0.0),
+            "free_transfers": int(num(body.get("free_transfers"), 0, 5, 1)),
+            "formation": "auto", "entry_id": eid or None}
+
+
+def run_adhoc(jid, spec):
+    try:
+        JOBS[jid]["status"] = "queued"
+        with _ADHOC_SLOT:
+            JOBS[jid]["status"] = "running"
+            data = compute(False, adhoc=spec)
+        JOBS[jid].update(status="done", data=data)
+    except Exception as e:
+        print(traceback.format_exc(), flush=True)
+        JOBS[jid].update(status="error", error=f"{type(e).__name__}: {e}")
+
+
+def start_adhoc(body):
+    spec = _clean_adhoc(body)
+    if not spec["players"] and not spec["entry_id"]:
+        return None
+    jid = uuid.uuid4().hex[:12]
+    while len(JOBS) >= 40:
+        JOBS.pop(next(iter(JOBS)))
+    JOBS[jid] = {"status": "queued", "data": None, "error": None}
+    threading.Thread(target=run_adhoc, args=(jid, spec), daemon=True).start()
+    return jid
+
+
 def run_job(force=False):
     with LOCK:
         if STATE["status"] == "running":
@@ -1850,7 +1929,7 @@ def run_job(force=False):
         # come this way, which is exactly why selecting stays instant.
         STATE["by_team"] = {}
     try:
-        data = compute(force)
+        data = compute(force, anonymous=not ADMIN)
         with LOCK:
             STATE["data"] = data
             if data.get("active_team"):
@@ -1862,7 +1941,8 @@ def run_job(force=False):
         # Work out the other teams too, quietly, so opening one is instant
         # rather than a thirty-second wait. Running several teams is only
         # expensive the first time; after this every switch is served from here.
-        threading.Thread(target=warm_other_teams, daemon=True).start()
+        if ADMIN:
+            threading.Thread(target=warm_other_teams, daemon=True).start()
     except Exception as e:
         tb = traceback.format_exc()
         with LOCK:
@@ -1947,8 +2027,23 @@ def route(method, path, raw=b""):
         if p == "/api/config":
             cfg = load_config()
             return 200, J, json.dumps({k: cfg.get(k) for k in
-                ("entry_id", "horizon", "ft_value", "max_hits",
+                (("entry_id",) if ADMIN else ()) + ("horizon", "ft_value", "max_hits",
                  "prior_weight_games", "decay", "sim_runs")})
+        if p.startswith("/api/analyse/"):
+            j = JOBS.get(p.rsplit("/", 1)[1])
+            if not j:
+                return 404, J, json.dumps({"error": "unknown job"})
+            out = {"status": j["status"], "error": j["error"]}
+            if j["status"] == "done":
+                out["data"] = j["data"]
+            return 200, J, json.dumps(out)
+        if p in ("/api/squad", "/api/teams") and not ADMIN:
+            from fplbrain import optimise as opt
+            if p == "/api/teams":
+                return 200, J, json.dumps({"teams": [], "active": None})
+            return 200, J, json.dumps({"players": [], "bank": 0.0, "free_transfers": 1,
+                                       "formation": "auto", "unsaved": True,
+                                       "formations": [opt.formation_name(f) for f in opt.FORMATIONS]})
         if p == "/api/squad":
             from fplbrain import squad as squadmod, optimise as opt
             d = squadmod.load()
@@ -1974,6 +2069,13 @@ def route(method, path, raw=b""):
             threading.Thread(target=run_job, kwargs={"force": bool(body.get("force"))},
                              daemon=True).start()
             return 200, J, json.dumps({"ok": True})
+        if p == "/api/analyse":
+            jid = start_adhoc(body)
+            if not jid:
+                return 400, J, json.dumps({"error": "send players or an entry_id"})
+            return 200, J, json.dumps({"job": jid})
+        if p in ("/api/config", "/api/squad", "/api/teams", "/api/calibrate") and not ADMIN:
+            return _NO_ADMIN
         if p == "/api/config":
             cfg = load_config()
             for k in ("entry_id", "horizon", "ft_value", "max_hits",
