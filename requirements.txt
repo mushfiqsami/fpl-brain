@@ -1,4 +1,4 @@
-pulp
+pulp>=3.0,<4
 numpy
 openpyxl
 fastapi
