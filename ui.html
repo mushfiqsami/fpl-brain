@@ -43,74 +43,6 @@ body{
   overscroll-behavior-y:contain;min-height:100vh
 }
 
-/* ---------- MY TEAM (FPL-style home) ---------- */
-.mystrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;margin-bottom:14px}
-.mystat{background:var(--slate);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.mystat .v{font:800 20px/1.1 var(--mono);margin-top:5px}
-.mystat .s{font-size:11px;color:var(--dim);margin-top:3px}
-.fplpitch{position:relative;border-radius:14px;border:1px solid var(--line);padding:14px 6px 10px;
-  background:
-   repeating-linear-gradient(180deg,rgba(53,196,107,.20) 0 46px,rgba(53,196,107,.12) 46px 92px),
-   #0F2A1C;overflow:hidden}
-.fplpitch:before{content:"";position:absolute;left:8%;right:8%;top:0;height:62px;
-  border:2px solid rgba(232,236,245,.18);border-top:none;border-radius:0 0 8px 8px;pointer-events:none}
-.fplpitch:after{content:"";position:absolute;left:50%;top:50%;width:86px;height:86px;margin:-43px;
-  border:2px solid rgba(232,236,245,.12);border-radius:50%;pointer-events:none}
-.prow{display:flex;justify-content:space-evenly;align-items:flex-start;margin:6px 0 14px;position:relative;z-index:1}
-.pcard{width:74px;text-align:center;cursor:pointer;position:relative}
-.pcard svg.shirt{width:46px;height:42px;display:block;margin:0 auto;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
-.pcard .nm{background:#fff;color:#1b1640;font:700 11px/1.15 var(--sans);padding:3px 2px;border-radius:4px 4px 0 0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pcard .ft{background:#3a1c5b;color:#fff;font:600 10px/1.2 var(--mono);padding:2px 2px;border-radius:0 0 4px 4px}
-.pcard .ft b{color:#F7D774}
-.pcard.sel .nm{outline:2px solid var(--sodium)}
-.pcard .arm{position:absolute;top:-2px;right:6px;width:17px;height:17px;border-radius:50%;
-  background:#111;color:#fff;font:800 10px/17px var(--sans);border:1.5px solid #fff}
-.pcard .arm.v{background:#555}
-.pcard .rk{position:absolute;top:-2px;left:6px;width:15px;height:15px;border-radius:50%;
-  background:var(--coral);color:#fff;font:800 10px/15px var(--sans)}
-.benchrow{display:flex;justify-content:space-evenly;background:rgba(11,16,32,.55);border-radius:10px;padding:10px 0 4px;margin-top:2px}
-.benchrow .cap{position:absolute}
-.sugg{background:var(--slate);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
-.sugg .sw{display:grid;grid-template-columns:1fr 34px 1fr;gap:8px;align-items:center}
-.sugg .who{background:var(--slate2);border-radius:9px;padding:9px 10px;min-width:0}
-.sugg .who b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sugg .who s{text-decoration:none;color:var(--dim);font-size:11px}
-.sugg .who.out{border-left:3px solid var(--coral)}
-.sugg .who.in{border-left:3px solid var(--turf)}
-.sugg .gain{font:800 12px/1 var(--mono);color:var(--ink);background:var(--turf);border-radius:5px;padding:4px 7px;display:inline-block}
-.sugg .gain.neg{background:var(--coral);color:#fff}
-.rs{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:#C9D3E8;padding:5px 0;border-top:1px solid rgba(38,49,79,.6)}
-.rs i{font-style:normal;flex:0 0 auto;font:700 9px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;
-  background:var(--slate2);color:var(--sodium);border-radius:4px;padding:4px 5px;margin-top:2px;min-width:58px;text-align:center}
-.rs i.risk{color:var(--coral)}.rs i.minutes{color:var(--turf)}.rs i.ceiling{color:var(--violet)}
-.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:12px}
-.pipe .st{background:var(--slate2);border-radius:10px;padding:10px 11px;position:relative}
-.pipe .st .n{font:800 10px/1 var(--mono);color:var(--sodium)}
-.pipe .st b{display:block;font-size:13px;margin:5px 0 3px}
-.pipe .st span{font-size:11.5px;color:var(--dim);line-height:1.4}
-.wf{display:grid;grid-template-columns:104px 1fr 96px;gap:8px;align-items:center;font-size:12px;padding:3px 0}
-.wf .bar{height:11px;border-radius:3px;background:var(--turf)}
-.wf .bar.neg{background:var(--coral)}
-.wf .lab{color:var(--dim)}
-.wz .slot{width:68px;cursor:pointer;text-align:center}
-.wz .slot .ph{width:46px;height:42px;margin:0 auto;border:2px dashed rgba(232,236,245,.45);border-radius:9px;
-  color:rgba(232,236,245,.75);font:700 20px/38px var(--sans)}
-.wz .slot .nm{background:rgba(11,16,32,.7);color:#fff;font:600 10px/1.2 var(--sans);padding:3px 2px;border-radius:4px;margin-top:2px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wz .slot.act .ph{border-color:var(--sodium);color:var(--sodium)}
-.wz .slot .x{position:absolute;margin:-4px 0 0 20px;background:var(--coral);color:#fff;width:15px;height:15px;border-radius:50%;
-  font:800 10px/15px var(--sans)}
-.budget{height:10px;background:var(--slate2);border-radius:5px;overflow:hidden}
-.budget>div{height:100%;background:var(--turf);transition:width .2s}
-.budget.over>div{background:var(--coral)}
-.pickrow{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(38,49,79,.5);cursor:pointer;font-size:13px}
-.pickrow:hover{background:var(--slate2)}
-.pickrow.dis{opacity:.35;pointer-events:none}
-.hero{background:linear-gradient(135deg,#1B2440,#141B2E);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
-.hero h1{font:800 22px/1.2 var(--sans);letter-spacing:-.02em;margin-bottom:6px}
-.hero p{color:var(--dim);font-size:13.5px}
-
 /* ---------- eyebrow / label system ---------- */
 .eyebrow{font:700 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
@@ -407,6 +339,184 @@ nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+/* =====================================================================
+   SHOWCASE LAYER. Loaded last so it restyles the whole app, not just the
+   home tab: aurora backdrop, glass surfaces, pill tabs, motion.
+   ===================================================================== */
+:root{--cyan:#4EA8F2;--glass:linear-gradient(160deg,rgba(33,44,78,.72),rgba(18,25,46,.78));
+  --edge:rgba(255,255,255,.075);--glow:0 18px 50px -24px rgba(0,0,0,.9)}
+body{background:var(--ink)}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(38vmax 30vmax at 12% 8%,rgba(139,124,246,.26),transparent 62%),
+   radial-gradient(34vmax 28vmax at 88% 4%,rgba(242,169,59,.20),transparent 62%),
+   radial-gradient(40vmax 34vmax at 70% 96%,rgba(53,196,107,.14),transparent 62%),
+   radial-gradient(30vmax 26vmax at 6% 90%,rgba(78,168,242,.14),transparent 62%);
+  animation:aurora 26s ease-in-out infinite alternate}
+@keyframes aurora{to{transform:translate3d(2.5vmax,-2vmax,0) rotate(5deg) scale(1.05)}}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.6) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,169,59,.55)}60%{box-shadow:0 0 0 9px rgba(242,169,59,0)}}
+@keyframes sheen{from{background-position:-200% 0}to{background-position:200% 0}}
+
+header{background:rgba(9,13,27,.72);backdrop-filter:blur(18px) saturate(1.4);border-bottom:1px solid var(--edge)}
+.mark b{font-size:19px;background:linear-gradient(90deg,#fff,#C9D3E8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.mark i{color:var(--sodium);-webkit-text-fill-color:var(--sodium)}
+.panel{background:var(--glass);border:1px solid var(--edge);border-radius:20px;box-shadow:var(--glow),0 1px 0 rgba(255,255,255,.05) inset;
+  backdrop-filter:blur(10px);animation:up .5s both}
+.panel>h2{border-bottom:1px solid var(--edge);color:#A9B5D0}
+.cols>div>.panel:nth-child(2){animation-delay:.08s}.cols>div>.panel:nth-child(3){animation-delay:.16s}
+.dtabs{gap:6px;border:none;background:rgba(255,255,255,.035);border:1px solid var(--edge);border-radius:14px;padding:5px;width:max-content;max-width:100%;overflow:auto;margin-bottom:20px}
+.dtabs div{border-radius:10px;padding:11px 15px}
+.dtabs div.on{background:linear-gradient(180deg,#F7B950,var(--sodium));color:#241503;box-shadow:0 6px 18px -6px rgba(242,169,59,.7)}
+.dtabs div.on::after{display:none}
+nav{background:rgba(9,13,27,.82);backdrop-filter:blur(18px);border-top:1px solid var(--edge)}
+button.go{border-radius:12px;box-shadow:0 10px 24px -10px rgba(242,169,59,.7);transition:transform .15s,box-shadow .15s}
+button.go:hover{transform:translateY(-1px)}
+button.go[disabled]{opacity:.45;box-shadow:none}
+
+/* ---------- hero ---------- */
+.mhero{position:relative;border-radius:26px;padding:26px 26px 22px;margin-bottom:18px;overflow:hidden;
+  border:1px solid var(--edge);
+  background:
+   radial-gradient(60% 120% at 100% 0%,rgba(242,169,59,.20),transparent 60%),
+   radial-gradient(50% 100% at 0% 100%,rgba(139,124,246,.22),transparent 60%),
+   linear-gradient(160deg,#1B2750,#0F1730);
+  box-shadow:var(--glow);animation:up .5s both}
+.mhero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(115deg,transparent 0 38px,rgba(255,255,255,.018) 38px 76px)}
+.mhero .grid{position:relative;z-index:1;display:grid;gap:22px;grid-template-columns:1.25fr 1fr;align-items:center}
+@media(max-width:820px){.mhero .grid{grid-template-columns:1fr}.mhero{padding:20px 16px}}
+.live{display:inline-flex;align-items:center;gap:8px;font:700 10px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:#CFD8EE;
+  background:rgba(255,255,255,.07);border:1px solid var(--edge);padding:7px 11px;border-radius:99px}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--turf);animation:pulse 2s infinite;box-shadow:0 0 0 0 rgba(53,196,107,.6)}
+.big{font:900 clamp(54px,9vw,92px)/.95 var(--sans);letter-spacing:-.045em;margin:14px 0 4px;
+  background:linear-gradient(180deg,#fff 30%,#F7C873);-webkit-background-clip:text;background-clip:text;color:transparent}
+.big small{font:700 16px var(--sans);letter-spacing:0;-webkit-text-fill-color:var(--dim);margin-left:8px}
+.mhero p.sub{color:#B7C2DC;font-size:15px;max-width:52ch}
+.mhero p.sub b{color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.chips span{font:600 11.5px/1 var(--sans);color:#C9D3E8;background:rgba(255,255,255,.06);border:1px solid var(--edge);padding:8px 11px;border-radius:99px}
+.chips span b{color:var(--sodium);font-family:var(--mono)}
+.mhero .grid>*{min-width:0}
+html,body{overflow-x:hidden}
+@media(max-width:560px){#buildchip{display:none}nav{overflow-x:auto}nav a{min-width:58px;font-size:9.5px}.tile .m{font-size:17px}}
+.gauge{width:100%;max-width:380px;margin:0 auto;display:block}
+
+/* ---------- feature tiles ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:12px;margin-bottom:20px}
+.tile{position:relative;text-align:left;cursor:pointer;border:1px solid var(--edge);border-radius:18px;padding:15px 15px 14px;color:var(--chalk);
+  background:var(--glass);overflow:hidden;animation:up .55s both;transition:transform .18s,border-color .18s,box-shadow .18s}
+.tile:hover{transform:translateY(-4px);border-color:rgba(242,169,59,.5);box-shadow:0 18px 34px -18px rgba(242,169,59,.45)}
+.tile::before{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:var(--c,var(--sodium));opacity:.14;filter:blur(6px)}
+.tile .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:color-mix(in srgb,var(--c,var(--sodium)) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--c,var(--sodium)) 40%,transparent)}
+.tile .ic svg{width:19px;height:19px;stroke:var(--c,var(--sodium));fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile h3{font:800 14px/1.2 var(--sans);margin:12px 0 3px}
+.tile .m{font:800 21px/1.1 var(--mono);color:#fff;letter-spacing:-.02em}
+.tile .d{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.4}
+.tile .go{position:absolute;right:13px;bottom:12px;color:var(--c,var(--sodium));font-size:15px;opacity:0;transform:translateX(-6px);transition:.18s}
+.tile:hover .go{opacity:1;transform:none}
+.sec{display:flex;align-items:baseline;gap:10px;margin:6px 2px 12px}
+.sec h2{font:800 19px/1 var(--sans);letter-spacing:-.02em}
+.sec span{font-size:12.5px;color:var(--dim)}
+
+/* ---------- pitch ---------- */
+.fplpitch{position:relative;border-radius:20px;padding:20px 4px 8px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.10);
+  background:
+   radial-gradient(120% 70% at 50% 0%,rgba(255,255,255,.10),transparent 60%),
+   repeating-linear-gradient(180deg,#1F7A43 0 52px,#1B6D3C 52px 104px);
+  box-shadow:inset 0 0 70px rgba(0,0,0,.35)}
+.fplpitch .ln{position:absolute;inset:10px;border:2px solid rgba(255,255,255,.26);border-radius:10px;pointer-events:none}
+.fplpitch .ln:before{content:"";position:absolute;left:50%;top:0;width:28%;height:12%;transform:translateX(-50%);border:2px solid rgba(255,255,255,.26);border-top:none}
+.fplpitch .ln:after{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid rgba(255,255,255,.2)}
+.fplpitch .cc{position:absolute;left:50%;top:50%;width:92px;height:92px;margin:-46px;border:2px solid rgba(255,255,255,.2);border-radius:50%;pointer-events:none}
+.prow{display:flex;justify-content:space-evenly;align-items:flex-start;margin:0 0 20px;position:relative;z-index:1}
+.pcard{width:clamp(62px,18vw,96px);text-align:center;cursor:pointer;position:relative;animation:pop .5s both;transition:transform .15s}
+.pcard:hover{transform:translateY(-4px) scale(1.04)}
+.pcard svg.shirt{width:clamp(40px,11vw,56px);height:auto;display:block;margin:0 auto -4px;position:relative;z-index:1;filter:drop-shadow(0 6px 5px rgba(0,0,0,.45))}
+.pcard .nm{position:relative;z-index:2;background:rgba(255,255,255,.96);color:#14102B;font:800 clamp(10px,2.6vw,12px)/1.15 var(--sans);padding:4px 5px 3px;border-radius:7px 7px 0 0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard .ft{background:linear-gradient(180deg,#3B1D63,#2A1248);color:#E7DDFB;font:600 10px/1.3 var(--mono);padding:3px 2px 4px;border-radius:0 0 7px 7px;display:flex;justify-content:center;align-items:center;gap:5px}
+.pcard .ft b{font-size:11px;padding:1px 5px;border-radius:5px;color:#0B1020;background:#9AA7C4}
+.pcard .ft b.hi{background:var(--turf)}.pcard .ft b.mid{background:var(--sodium)}
+.pcard.sel .nm{box-shadow:0 0 0 2px var(--sodium),0 0 22px rgba(242,169,59,.7)}
+.pcard.cap svg.shirt{filter:drop-shadow(0 0 12px rgba(242,169,59,.95)) drop-shadow(0 6px 5px rgba(0,0,0,.45))}
+.pcard .arm{position:absolute;top:-5px;right:2px;z-index:3;width:20px;height:20px;border-radius:50%;background:#0B1020;color:var(--sodium);
+  font:900 11px/18px var(--sans);border:2px solid var(--sodium)}
+.pcard .arm.v{color:#fff;border-color:#fff;background:#555}
+.pcard .rk{position:absolute;top:-5px;left:2px;z-index:3;width:18px;height:18px;border-radius:50%;background:var(--coral);color:#fff;font:900 11px/18px var(--sans);
+  box-shadow:0 0 0 2px rgba(0,0,0,.35)}
+.benchrow{display:flex;justify-content:space-evenly;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--edge);border-radius:16px;padding:14px 0 10px;margin-top:6px}
+.benchrow .prow{margin:0}
+.bn{position:absolute;left:50%;transform:translateX(-50%);bottom:-9px;z-index:3;background:#0B1020;border:1px solid var(--edge);font:800 9px/1 var(--mono);padding:3px 6px;border-radius:99px;color:var(--dim)}
+
+/* ---------- suggestions ---------- */
+.sugg{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.015));border:1px solid var(--edge);border-radius:18px;padding:14px;margin-bottom:12px;animation:up .5s both}
+.sugg .sw{display:grid;grid-template-columns:1fr 38px 1fr;gap:8px;align-items:center}
+.sugg .who{background:rgba(11,16,32,.55);border-radius:13px;padding:10px 11px;min-width:0;display:flex;gap:9px;align-items:center}
+.sugg .who svg.shirt{width:34px;flex:none}
+.sugg .who div{min-width:0}
+.sugg .who b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sugg .who s{text-decoration:none;color:var(--dim);font-size:11px;display:block}
+.sugg .who.out{box-shadow:inset 3px 0 0 var(--coral)}
+.sugg .who.in{box-shadow:inset 3px 0 0 var(--turf)}
+.sugg .ar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07);color:var(--chalk);font-size:15px}
+.sugg .gain{font:900 13px/1 var(--mono);color:#06210F;background:linear-gradient(180deg,#5EE08F,var(--turf));border-radius:8px;padding:6px 9px;display:inline-block;box-shadow:0 8px 18px -8px rgba(53,196,107,.8)}
+.sugg .gain.neg{background:var(--coral);color:#fff}
+.rs{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#C9D3E8;padding:7px 0;border-top:1px solid var(--edge)}
+.rs i{font-style:normal;flex:0 0 auto;font:800 9px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;background:rgba(242,169,59,.12);color:var(--sodium);border-radius:6px;padding:5px 6px;margin-top:1px;min-width:62px;text-align:center}
+.rs i.risk{color:var(--coral);background:rgba(242,84,91,.12)}.rs i.minutes{color:var(--turf);background:rgba(53,196,107,.12)}.rs i.ceiling{color:var(--violet);background:rgba(139,124,246,.14)}
+.rs i.price{color:var(--cyan);background:rgba(78,168,242,.12)}
+.kpi{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px}
+.kpi .eyebrow{display:block}.kpi .v{font:900 28px/1.1 var(--mono);margin-top:5px}
+
+/* ---------- captain, runway, how-it-thinks ---------- */
+.cap3{display:grid;gap:10px}
+.capc{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--edge);position:relative;overflow:hidden}
+.capc.top{border-color:rgba(242,169,59,.55);background:linear-gradient(120deg,rgba(242,169,59,.16),rgba(255,255,255,.03))}
+.capc .rk{font:900 22px var(--mono);color:var(--dim)}.capc.top .rk{color:var(--sodium)}
+.capc b{font-size:15px}.capc .sm{font-size:11px;color:var(--dim)}
+.runway{display:grid;gap:4px;font:600 11px var(--mono)}
+.runway .r{display:grid;grid-template-columns:92px repeat(var(--n),1fr);gap:4px;align-items:center}
+.runway .r span.c{text-align:center;border-radius:6px;padding:6px 0;color:#08101F;font-weight:800}
+.runway .r span.nmv{font:700 12px var(--sans);color:#C9D3E8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.runway .hd span{color:var(--dim);text-align:center;font-size:10px}
+.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.pipe .st{background:rgba(255,255,255,.04);border:1px solid var(--edge);border-radius:14px;padding:12px;position:relative}
+.pipe .st .n{font:900 10px/1 var(--mono);color:var(--sodium);letter-spacing:.08em}
+.pipe .st b{display:block;font-size:14px;margin:7px 0 4px}
+.pipe .st span{font-size:11.5px;color:var(--dim);line-height:1.45}
+.pipe .st+.st:before{content:"›";position:absolute;left:-10px;top:50%;color:var(--sodium);font-size:20px;transform:translateY(-50%)}
+.wf{display:grid;grid-template-columns:112px 1fr 56px;gap:10px;align-items:center;font-size:12px;padding:4px 0}
+.wf .bar{height:12px;border-radius:6px;background:linear-gradient(90deg,#1F9E52,var(--turf));transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.wf .bar.neg{background:linear-gradient(90deg,#B83A40,var(--coral))}
+.wf .lab{color:#A9B5D0}
+.radarwrap{display:grid;grid-template-columns:minmax(220px,1fr) 1fr;gap:12px;align-items:center}
+@media(max-width:560px){.radarwrap{grid-template-columns:1fr}}
+.dna .row{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid var(--edge);color:#C9D3E8}
+.dna .row b{font-family:var(--mono);color:#fff}
+
+/* ---------- wizard ---------- */
+.steps{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.steps div{flex:1 1 170px;background:rgba(255,255,255,.06);border:1px solid var(--edge);border-radius:14px;padding:12px}
+.steps div i{font:900 11px var(--mono);font-style:normal;color:var(--sodium)}
+.steps div b{display:block;margin:6px 0 2px;font-size:14px}
+.steps div span{font-size:12px;color:var(--dim)}
+.wz .slot{width:clamp(58px,16vw,78px);cursor:pointer;text-align:center;position:relative;z-index:1}
+.wz .slot .ph{width:46px;height:44px;margin:0 auto;border:2px dashed rgba(255,255,255,.5);border-radius:12px;color:rgba(255,255,255,.8);font:700 22px/40px var(--sans);transition:.15s}
+.wz .slot:hover .ph{background:rgba(255,255,255,.12)}
+.wz .slot .nm{background:rgba(11,16,32,.78);color:#fff;font:700 10px/1.2 var(--sans);padding:4px 3px;border-radius:7px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wz .slot.act .ph{border-color:var(--sodium);color:var(--sodium);box-shadow:0 0 18px rgba(242,169,59,.6);animation:pulse 1.8s infinite}
+.wz .slot .x{position:absolute;right:6px;top:-4px;z-index:3;background:var(--coral);color:#fff;width:17px;height:17px;border-radius:50%;font:800 11px/17px var(--sans)}
+.wz .slot svg.shirt{width:46px;margin:0 auto;display:block}
+.budget{height:12px;background:rgba(255,255,255,.08);border-radius:7px;overflow:hidden}
+.budget>div{height:100%;background:linear-gradient(90deg,#1F9E52,var(--turf));transition:width .25s}
+.budget.over>div{background:var(--coral)}
+.pickrow{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--edge);cursor:pointer;font-size:13px;transition:background .12s}
+.pickrow:hover{background:rgba(242,169,59,.09)}
+.pickrow.dis{opacity:.32;pointer-events:none}
 </style>
 </head>
 <body>
@@ -884,31 +994,72 @@ function tickCountdown(){
 setInterval(tickCountdown,30000);
 
 /* =====================================================================
-   MY TEAM - the FPL "My Team" look, plus the reasoning FPL does not show.
-   Everything here reads D (the server payload). The only numbers computed
-   in the browser are sums and ratios of fields the server already sent.
+   MY TEAM - the showcase home. Reads D (the server payload); the only
+   numbers computed in the browser are sums and ratios of fields the
+   server already sent, and each one is labelled with what it is.
    ===================================================================== */
 const POSCOL={GK:'#E8C547',DEF:'#35C46B',MID:'#4EA8F2',FWD:'#F2545B'};
-const WZ={slots:SLOTS.flatMap(([p,n])=>Array.from({length:n},()=>({pos:p,pl:null}))),act:0,q:'',on:false,busy:false};
+const WZ={slots:SLOTS.flatMap(([p,n])=>Array.from({length:n},()=>({pos:p,pl:null}))),act:0,q:'',on:false,busy:false,focus:false};
+const IC={
+ swap:'<path d="M7 4 3 8l4 4"/><path d="M3 8h13"/><path d="m17 20 4-4-4-4"/><path d="M21 16H8"/>',
+ route:'<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/>',
+ cap:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M8.5 9.5C9 8 10.4 7.5 12 7.5s3 .6 3 2-1.4 1.9-3 2.3-3 .8-3 2.3 1.4 2 3 2 3-.6 3.4-2"/>',
+ chip:'<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4"/>',
+ target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+ cal:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ data:'<path d="M4 20V10M10 20V4M16 20v-9M22 20H2"/>',
+ crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5Z"/>',
+ teams:'<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/>',
+ star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9Z"/>',
+ brain:'<path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V4a3 3 0 0 0-3 0Z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1"/>',
+ news:'<path d="M4 5h13v14H6a2 2 0 0 1-2-2Z"/><path d="M17 8h3v9a2 2 0 0 1-2 2M8 9h5M8 13h5"/>'};
 
-function shirt(pos,sleeve){
-  const c=POSCOL[pos]||'#888';
+function shirt(pos){
   return `<svg class="shirt" viewBox="0 0 46 42"><path d="M15 2 2 9l5 11 6-2v22h20V18l6 2 5-11L31 2c-1 5-4 7-8 7s-7-2-8-7Z"
-    fill="${c}" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/></svg>`;
+    fill="url(#sh-${pos})" stroke="rgba(0,0,0,.4)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M15 2c1 5 4 7 8 7s7-2 8-7c-2 3-5 4-8 4s-6-1-8-4Z" fill="rgba(255,255,255,.55)"/>
+    <path d="M13 18v22M33 18v22" stroke="rgba(0,0,0,.12)" stroke-width="1"/></svg>`;
 }
-function pcard(r,opts){
+function shirtDefs(){
+  const g=(p,c)=>`<linearGradient id="sh-${p}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".62"/></linearGradient>`;
+  return `<svg width="0" height="0" style="position:absolute"><defs>${Object.entries(POSCOL).map(([p,c])=>g(p,c)).join('')}</defs></svg>`;
+}
+const epCls=v=>v>=5?'hi':v>=3.5?'mid':'';
+function pcard(r,i,opts){
   opts=opts||{};
   const risk=(r.flags||[]).length||r.p_appear<0.75;
-  return `<div class="pcard${opts.sel===r.name?' sel':''}" onclick="myPick('${esc(r.name).replace(/'/g,'')}')">
+  const tip=`${r.name} · ${r.p_appear*100|0}% to play · range ${(r.floor||0).toFixed(0)}-${(r.ceiling||0).toFixed(0)}${(r.flags||[]).length?' · '+r.flags.join('; '):''}`;
+  return `<div class="pcard${r.captain?' cap':''}${MYSEL===r.name?' sel':''}" data-n="${esc(r.name)}" title="${esc(tip)}" onclick="myPick(this.dataset.n)" style="animation-delay:${Math.min(i||0,9)*40}ms">
     ${r.captain?'<div class="arm">C</div>':r.vice?'<div class="arm v">V</div>':''}
-    ${risk?'<div class="rk" title="'+esc((r.flags||[]).join('; ')||'Start risk')+'">!</div>':''}
+    ${risk?'<div class="rk">!</div>':''}
     ${shirt(r.pos)}
     <div class="nm">${esc(r.name)}</div>
-    <div class="ft">${esc(r.fixture||'-')}<br><b>${r.ep.toFixed(1)}</b></div>
+    <div class="ft">${esc(r.fixture||'-')}<b class="${epCls(r.ep)}">${r.ep.toFixed(1)}</b></div>
+    ${opts.bench?`<div class="bn">SUB ${r.order||''}</div>`:''}
   </div>`;
 }
 let MYSEL=null;
-function myPick(n){MYSEL=n;drawMy();const e=document.getElementById('why');if(e)e.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function myPick(n){
+  MYSEL=n;
+  document.querySelectorAll('.pcard').forEach(c=>c.classList.toggle('sel',c.dataset.n===n));
+  const w=document.getElementById('why');
+  if(w){w.outerHTML=whyHTML();const e=document.getElementById('why');if(e)e.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+function goT(t){showTab(t);}
+function scr(id){const e=document.getElementById(id);if(e)e.scrollIntoView({behavior:'smooth',block:'start'});}
+
+/* ---- count-up so the headline number lands rather than appears ---- */
+let CU_KEY='';
+function countUps(){
+  document.querySelectorAll('[data-count]').forEach(el=>{
+    const to=parseFloat(el.dataset.count),dec=+(el.dataset.dec||0);
+    if(CU_KEY===el.dataset.count+'|'+el.id){el.textContent=to.toFixed(dec);return;}
+    CU_KEY=el.dataset.count+'|'+el.id;
+    const t0=performance.now();
+    (function f(t){const k=Math.min(1,(t-t0)/900),e=1-Math.pow(1-k,3);
+      el.textContent=(to*e).toFixed(dec);if(k<1)requestAnimationFrame(f);})(t0);
+  });
+}
 
 /* ---- onboarding wizard ---- */
 async function wzOpen(prefill){
@@ -926,15 +1077,15 @@ async function wzOpen(prefill){
     });
   }
   WZ.act=Math.max(0,WZ.slots.findIndex(s=>!s.pl));
-  drawMy();
+  drawMy();window.scrollTo({top:0,behavior:'smooth'});
 }
 function wzCost(){return WZ.slots.reduce((a,s)=>a+(s.pl?s.pl.p:0),0);}
 function wzClubCount(c,skip){return WZ.slots.filter((s,i)=>i!==skip&&s.pl&&s.pl.c===c).length;}
-function wzSet(i){WZ.act=i;WZ.q='';drawMy();}
+function wzSet(i){WZ.act=i;WZ.q='';WZ.focus=true;drawMy();}
 function wzClear(i,ev){if(ev)ev.stopPropagation();WZ.slots[i].pl=null;WZ.act=i;drawMy();}
 function wzAdd(idx){
   const s=WZ.slots[WZ.act];const pl=WZ.PICKS&&WZ.PICKS[idx];if(!s||!pl)return;
-  s.pl=pl;WZ.q='';
+  s.pl=pl;WZ.q='';WZ.focus=true;
   const nx=WZ.slots.findIndex(x=>!x.pl);if(nx>=0)WZ.act=nx;
   drawMy();
 }
@@ -954,7 +1105,7 @@ function wzListHTML(){
     return `<div class="pickrow${why?' dis':''}" onclick="wzAdd(${k})">
       <span><b>${esc(a.n)}</b> <s style="text-decoration:none;color:var(--dim);font-size:11px">${esc(a.c)}</s></span>
       <span class="num">${why?`<s style="text-decoration:none;color:var(--coral);font-size:11px">${why}</s> `:''}£${a.p.toFixed(1)}</span></div>`;
-  }).join('')||'<div class="note" style="border:none">No match.</div>';
+  }).join('')||'<div class="note" style="border:none;padding:14px">No match.</div>';
 }
 function drawWzList(){const e=document.getElementById('wzlist');if(e)e.innerHTML=wzListHTML();}
 async function wzSubmit(){
@@ -979,6 +1130,13 @@ async function wzImport(){
   try{await refreshTeamsCache();}catch(e){}
   WZ.on=false;document.getElementById('boot').classList.remove('hidden');setTimeout(poll,600);
 }
+function featChips(){
+  const n=(D.horizon||[]).length||5;
+  return `<div class="chips"><span><b>${(D.sim_runs||0).toLocaleString()}</b> simulated gameweeks</span>
+    <span><b>${(D.players_projected||0).toLocaleString()}</b> players projected</span>
+    <span><b>${n}</b>-gameweek look-ahead</span><span>transfer route planner</span><span>chip timing</span>
+    <span>captain ceiling model</span><span>live price &amp; injury feed</span></div>`;
+}
 function wizardHTML(){
   const cost=wzCost(), n=WZ.slots.filter(s=>s.pl).length, left=100-cost, over=left<-1e-9;
   let i=0;
@@ -988,23 +1146,29 @@ function wizardHTML(){
       return `<div class="slot${k===WZ.act?' act':''}" onclick="wzSet(${k})">
         ${s.pl?shirt(pos)+`<div class="x" onclick="wzClear(${k},event)">×</div>`:'<div class="ph">+</div>'}
         <div class="nm">${s.pl?esc(s.pl.n):pos}</div>
-        ${s.pl?`<div class="num" style="font-size:10px;color:#fff">£${s.pl.p.toFixed(1)}</div>`:''}</div>`;
+        ${s.pl?`<div class="num" style="font-size:10px;color:#fff;margin-top:2px">£${s.pl.p.toFixed(1)}</div>`:''}</div>`;
     }).join('');
     return `<div class="prow">${cells}</div>`;
   }).join('');
   const actPos=(WZ.slots[WZ.act]||{}).pos||'';
-  return `<div class="hero"><div class="eyebrow">Step 1 of 2</div>
-      <h1>${D&&D.squad_source!=='none'?'Rebuild your team':'Build your team'}</h1>
-      <p>Pick your 15 the way you would in the FPL app: £100m, 2 GK · 5 DEF · 5 MID · 3 FWD, at most 3 from one club.
-      The model then scores every player, finds your best XI and captain, and tells you what to change and why.</p></div>
+  const rebuild=D&&D.squad_source!=='none';
+  return shirtDefs()+`<div class="mhero"><div class="grid" style="grid-template-columns:1fr">
+      <div><span class="live"><i></i>${rebuild?'Rebuild':'Welcome'} · GW${D.gw}</span>
+      <div class="big" style="font-size:clamp(38px,7vw,64px)">${rebuild?'Rebuild your squad.':'Build your squad.'}<br>Get the model's verdict.</div>
+      <p class="sub">Pick your 15 the way you would in the FPL app. Then the brain projects every player, simulates thousands of gameweeks,
+      finds your best XI and captain, and tells you exactly <b>what to change and why</b>.</p>
+      ${featChips()}
+      <div class="steps"><div><i>01</i><b>Pick 15 players</b><span>£100m, 2 GK · 5 DEF · 5 MID · 3 FWD, max 3 per club.</span></div>
+        <div><i>02</i><b>Get a scorecard</b><span>Start security, upside, club spread, bench, value.</span></div>
+        <div><i>03</i><b>See the moves</b><span>Each transfer with its reasons and a chart.</span></div></div></div></div></div>
     <div class="cols"><div>
       <div class="panel"><h2>Your squad <span class="tag">${n}/15</span></h2><div class="body">
-        <div class="fplpitch wz">${rows}</div>
-        <div class="frow" style="justify-content:space-between;margin:12px 0 6px">
-          <span class="num"><b style="color:${over?'var(--coral)':'var(--turf)'}">£${left.toFixed(1)}m</b> left</span>
+        <div class="fplpitch wz"><div class="ln"></div><div class="cc"></div>${rows}</div>
+        <div class="frow" style="justify-content:space-between;margin:14px 0 7px">
+          <span class="num"><b style="font-size:18px;color:${over?'var(--coral)':'var(--turf)'}">£${left.toFixed(1)}m</b> left</span>
           <span class="num" style="color:var(--dim)">£${cost.toFixed(1)}m of £100.0m</span></div>
         <div class="budget${over?' over':''}"><div style="width:${Math.min(100,cost)}%"></div></div>
-        <button class="go" style="width:100%;margin-top:14px" ${n<15||over||WZ.busy?'disabled':''} onclick="wzSubmit()">
+        <button class="go" style="width:100%;margin-top:16px;padding:15px" ${n<15||over||WZ.busy?'disabled':''} onclick="wzSubmit()">
           ${WZ.busy?'Saving…':n<15?`Pick ${15-n} more`:over?'Over budget':'Analyse my team →'}</button>
       </div></div>
       <div class="panel"><h2>Already have a team?</h2><div class="body">
@@ -1015,46 +1179,115 @@ function wizardHTML(){
     </div><div>
       <div class="panel"><h2>Choose a ${esc(actPos)} <span class="tag">slot ${WZ.act+1}</span></h2>
         <div class="body" style="padding-bottom:0"><input id="wzq" placeholder="Search name or club" value="${esc(WZ.q)}" oninput="wzSearch(this.value)"></div>
-        <div id="wzlist" style="max-height:440px;overflow:auto;margin-top:8px">${wzListHTML()}</div></div>
+        <div id="wzlist" style="max-height:480px;overflow:auto;margin-top:10px">${wzListHTML()}</div></div>
     </div></div>`;
 }
 
-/* ---- the loaded view ---- */
-function gradeBar(label,val,txt,hint,col){
-  return `<div class="wf" title="${esc(hint)}"><span class="lab">${label}</span>
-    <div style="background:var(--slate2);border-radius:3px"><div class="bar" style="width:${Math.max(2,Math.min(100,val))}%;${col?'background:'+col:''}"></div></div>
-    <b class="num" style="text-align:right">${txt}</b></div>`;
+/* ---- visuals ---- */
+function gaugeSVG(lo,med,hi,val){
+  const max=Math.max(hi*1.08,val*1.15,20), cx=110,cy=112,r=88;
+  const P=v=>{const a=Math.PI*(1-Math.max(0,Math.min(max,v))/max);return [cx+r*Math.cos(a),cy-r*Math.sin(a)];};
+  const arc=(a,b,w,col,op)=>{const [x0,y0]=P(a),[x1,y1]=P(b);
+    return `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" opacity="${op||1}"/>`;};
+  const tick=(v,col,len)=>{const a=Math.PI*(1-v/max),x0=cx+(r-len)*Math.cos(a),y0=cy-(r-len)*Math.sin(a),x1=cx+(r+len)*Math.cos(a),y1=cy-(r+len)*Math.sin(a);
+    return `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${col}" stroke-width="3" stroke-linecap="round"/>`;};
+  const [nx,ny]=P(val);
+  return `<svg class="gauge" viewBox="0 0 220 140"><defs><linearGradient id="gg" x1="0" x2="1"><stop offset="0" stop-color="#8B7CF6"/><stop offset=".55" stop-color="#F2A93B"/><stop offset="1" stop-color="#35C46B"/></linearGradient></defs>
+    ${arc(0,max,14,'rgba(255,255,255,.09)')}${arc(lo,hi,14,'url(#gg)')}
+    ${tick(med,'#fff',11)}
+    <circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="8" fill="#0B1020" stroke="#F2A93B" stroke-width="3"/>
+    <text x="${cx}" y="${cy-18}" text-anchor="middle" font-size="11" fill="#9AA7C4" font-weight="700" letter-spacing="1.5">TYPICAL WEEK</text>
+    <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="22" fill="#fff" font-weight="900" font-family="ui-monospace,Consolas,monospace">${lo}–${hi}</text>
+    <text x="${P(0)[0]}" y="${cy+20}" text-anchor="middle" font-size="9" fill="#7E8AA6">0</text>
+    <text x="${P(max)[0]}" y="${cy+20}" text-anchor="middle" font-size="9" fill="#7E8AA6">${Math.round(max)}</text></svg>`;
 }
-function scorecardHTML(){
+function radarSVG(ax){
+  const n=ax.length,cx=120,cy=124,R=76;
+  const pt=(i,k)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [cx+R*k*Math.cos(a),cy+R*k*Math.sin(a)];};
+  const ring=k=>ax.map((_,i)=>pt(i,k).map(v=>v.toFixed(1)).join(',')).join(' ');
+  const poly=ax.map((a,i)=>pt(i,Math.max(.04,Math.min(1,a.v/100))).map(v=>v.toFixed(1)).join(',')).join(' ');
+  return `<svg viewBox="0 -4 240 252" style="width:100%;max-width:300px;margin:0 auto;display:block"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F2A93B" stop-opacity=".85"/><stop offset="1" stop-color="#8B7CF6" stop-opacity=".55"/></linearGradient></defs>
+    ${[.25,.5,.75,1].map(k=>`<polygon points="${ring(k)}" fill="none" stroke="rgba(255,255,255,${k===1?.2:.09})"/>`).join('')}
+    ${ax.map((_,i)=>{const [x,y]=pt(i,1);return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.09)"/>`;}).join('')}
+    <polygon points="${poly}" fill="url(#rg)" stroke="#F2A93B" stroke-width="2.2" stroke-linejoin="round"/>
+    ${ax.map((a,i)=>{const [x,y]=pt(i,Math.max(.04,Math.min(1,a.v/100)));return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.4" fill="#fff"/>`;}).join('')}
+    ${ax.map((a,i)=>{const [x,y]=pt(i,1.2);return `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#B7C2DC">${a.l}</text>`;}).join('')}</svg>`;
+}
+function dnaAxes(){
   const xi=D.xi||[], all=[...xi,...(D.bench||[])];
   const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+  const clamp=v=>Math.max(0,Math.min(100,v));
   const avail=mean(xi.map(r=>r.p_appear));
-  const flagged=all.filter(r=>(r.flags||[]).length);
+  const flagged=all.filter(r=>(r.flags||[]).length).length;
   const clubs={};all.forEach(r=>clubs[r.club]=(clubs[r.club]||0)+1);
-  const topClub=Object.entries(clubs).sort((a,b)=>b[1]-a[1])[0]||['-',0];
+  const top=Object.entries(clubs).sort((a,b)=>b[1]-a[1])[0]||['-',0];
   const own=mean(xi.map(r=>r.owned));
   const haul=xi.reduce((a,r)=>a+(r.p_haul||0),0);
-  const benchEp=(D.bench||[]).reduce((a,r)=>a+r.ep,0);
+  const bench=(D.bench||[]).reduce((a,r)=>a+r.ep,0);
   const ppm=xi.reduce((a,r)=>a+r.ep5,0)/Math.max(1,xi.reduce((a,r)=>a+r.price,0));
-  return `<div class="panel"><h2>Team scorecard <span class="tag">XI, next ${(D.horizon||[]).length||5} GWs</span></h2><div class="body">
-    ${gradeBar('Start security',avail*100,(avail*100).toFixed(0)+'%','Average chance each XI player plays. 100% = everyone nailed.',avail<.8?'var(--sodium)':'')}
-    ${gradeBar('Injury / news flags',Math.min(100,flagged.length*100/5),flagged.length+' flagged','Players with a doubt, suspension or start-risk note.',flagged.length?'var(--coral)':'')}
-    ${gradeBar('Haul chances',Math.min(100,haul*100/3),haul.toFixed(1)+' expected','Sum of each XI player\'s chance of a 10+ point haul (simulated).','var(--violet)')}
-    ${gradeBar('Template ↔ differential',Math.min(100,own*2),own.toFixed(0)+'% avg owned','Low = a differential squad, high = the template everyone else owns.','')}
-    ${gradeBar('Club spread',100-(topClub[1]-1)*33,topClub[0]+' ×'+topClub[1],'Most players from one club. FPL allows 3; fewer protects you from one bad match.','')}
-    ${gradeBar('Bench cover',Math.min(100,benchEp*100/12),benchEp.toFixed(1)+' pts','Combined expected points of the four benched players.','')}
-    ${gradeBar('Points per £m',Math.min(100,ppm*100/1.2),ppm.toFixed(2),'XI expected points (5 GWs) per £m of XI price.','')}
-    ${D.xi_floor!=null?`<p class="note" style="border:none;margin-top:8px">A typical week lands between <b class="num">${D.xi_floor}</b> and
-      <b class="num">${D.xi_ceiling}</b> points (median <b class="num">${D.xi_median}</b>) from ${(D.sim_runs||0).toLocaleString()} simulated gameweeks.</p>`:''}
-  </div></div>`;
+  return [
+   {l:'Security',v:clamp(avail*100),raw:(avail*100).toFixed(0)+'%',h:'Average chance each XI player plays'},
+   {l:'Health',v:clamp(100-flagged*20),raw:flagged+' flagged',h:'Players carrying a doubt, ban or start-risk note'},
+   {l:'Upside',v:clamp(haul/1.5*100),raw:haul.toFixed(1)+' hauls',h:'Expected number of 10+ point hauls across the XI'},
+   {l:'Edge',v:clamp(100-own*1.6),raw:own.toFixed(0)+'% owned',h:'Lower average ownership = more differential'},
+   {l:'Spread',v:clamp(100-(top[1]-1)*33),raw:top[0]+' ×'+top[1],h:'Most players from one club (FPL max is 3)'},
+   {l:'Depth',v:clamp(bench/12*100),raw:bench.toFixed(1)+' pts',h:'Expected points of the four benched players'},
+   {l:'Value',v:clamp(ppm/3.5*100),raw:ppm.toFixed(2)+' /£m',h:'XI expected points (look-ahead) per £m of XI price'}];
 }
+function tilesHTML(){
+  const P=D.plan, n=P&&P.out?P.out.length:0, gain=P?((P.proj_h||0)-(P.mine_h||0)):0;
+  const cb=D.chip_best||{}, cap=(D.xi||[]).find(r=>r.captain);
+  const T=[
+   {c:'#35C46B',ic:'swap',t:'Transfer planner',m:n?`${n} move${n>1?'s':''} · +${gain.toFixed(1)}`:'Hold',d:'Every legal swap tested against your bank and free transfers.',a:"scr('sugg')"},
+   {c:'#8B7CF6',ic:'route',t:'Route planner',m:D.route?D.route.total.toFixed(0)+' pts':'-',d:D.route?`Best path GW${D.gw}–${D.route.horizon_end} with banked transfers and hits.`:'Plans transfers week by week.',a:"goT('now')"},
+   {c:'#F2A93B',ic:'cap',t:'Captain model',m:cap?cap.name:'-',d:'Ranked on mean plus a ceiling bonus, from simulated outcomes.',a:"scr('capbox')"},
+   {c:'#4EA8F2',ic:'chip',t:'Chip timing',m:(cb.triple_captain&&cb.bench_boost)?`TC GW${cb.triple_captain.gw} · BB GW${cb.bench_boost.gw}`:'-',d:'The gameweek each chip is worth the most.',a:"goT('now')"},
+   {c:'#F2545B',ic:'target',t:'Targets',m:(D.targets||[]).length+' scouted',d:(D.targets||[])[0]?`Top next-5-GW pick: ${D.targets[0].name}.`:'Best buys by position.',a:"goT('targets')"},
+   {c:'#35C46B',ic:'cal',t:'Fixture heatmap',m:(D.fixtures||[]).length+' clubs',d:'Attack strength and clean-sheet odds for every club, five gameweeks out.',a:"goT('fixtures')"},
+   {c:'#4EA8F2',ic:'data',t:'Player data',m:(D.stats||[]).length+' players',d:'xG, xA, minutes and the model\'s own rates, side by side.',a:"goT('data')"},
+   {c:'#F2A93B',ic:'crown',t:'Dream squad',m:D.dream?D.dream.proj.toFixed(1)+' pts':'-',d:'What a fresh £100m would buy if you started from scratch.',a:"goT('now')"},
+   {c:'#8B7CF6',ic:'star',t:'Elite watch',m:D.elite?D.elite.managers+' managers':'-',d:D.elite?`What the top of the table did in GW${D.elite.gw}.`:'Top managers\' moves.',a:"goT('updates')"},
+   {c:'#F2545B',ic:'teams',t:'All your teams',m:(D.teams||[]).length+' saved',d:'Compare every squad on the same model.',a:"goT('teams')"},
+   {c:'#35C46B',ic:'brain',t:'Self-correcting',m:((D.calibration||{}).gws||0)+' GWs learned',d:'Scores its own past forecasts and nudges its biases.',a:"goT('settings')"},
+   {c:'#4EA8F2',ic:'news',t:'Price & news feed',m:(D.news||[]).length+' items',d:'Injuries, bans and price moves as they happen.',a:"goT('updates')"}];
+  return `<div class="sec"><h2>Everything in the brain</h2><span>Tap any card to open it</span></div>
+   <div class="tiles">${T.map((t,i)=>`<div class="tile" style="--c:${t.c};animation-delay:${i*40}ms" onclick="${t.a}">
+     <div class="ic"><svg viewBox="0 0 24 24">${IC[t.ic]}</svg></div><h3>${t.t}</h3><div class="m">${esc(t.m)}</div><div class="d">${esc(t.d)}</div><span class="go">→</span></div>`).join('')}</div>`;
+}
+function dnaHTML(){
+  const ax=dnaAxes();
+  return `<div class="panel"><h2>Team DNA <span class="tag">7 dimensions</span></h2><div class="body"><div class="radarwrap">
+    ${radarSVG(ax)}<div class="dna">${ax.map(a=>`<div class="row" title="${esc(a.h)}"><span>${a.l}</span><b>${esc(a.raw)}</b></div>`).join('')}</div></div>
+    <p class="note" style="border:none;padding-bottom:0">Each axis is scaled 0-100 from the raw figure on the right; hover a row for what it measures.</p></div></div>`;
+}
+function captainHTML(){
+  const t=(D.captain_table||[]).slice(0,3);if(!t.length)return '';
+  const mx=Math.max(...t.map(r=>r.ceiling||0),10);
+  return `<div class="panel" id="capbox"><h2>Captain spotlight <span class="tag">mean + ceiling bonus</span></h2><div class="body"><div class="cap3">
+    ${t.map((r,i)=>`<div class="capc${r.chosen?' top':''}"><div class="rk">${i+1}</div>
+      <div><b>${esc(r.name)}</b> <span class="sm">${esc(r.club)}</span>
+        <svg viewBox="0 0 100 10" preserveAspectRatio="none" style="width:100%;height:10px;margin-top:6px;display:block"><rect width="100" height="6" y="2" rx="3" fill="rgba(255,255,255,.08)"/>
+        <rect x="${(r.floor||0)/mx*100}" width="${Math.max(2,((r.ceiling||0)-(r.floor||0))/mx*100)}" y="2" height="6" rx="3" fill="${r.chosen?'#F2A93B':'#5C6B95'}"/>
+        <rect x="${r.ep/mx*100-.7}" width="1.6" y="0" height="10" fill="#fff"/></svg></div>
+      <div style="text-align:right"><div class="num" style="font:900 18px var(--mono)">${r.ep.toFixed(1)}</div><div class="sm">${((r.p_haul||0)*100).toFixed(0)}% haul</div></div></div>`).join('')}
+    </div><p class="note" style="border:none;padding-bottom:0">Bar = floor to ceiling from simulated gameweeks, white tick = expected points. Captaincy is the one place upside is worth paying for.</p></div></div>`;
+}
+function runwayHTML(){
+  const xi=D.xi||[];if(!xi.length)return '';
+  const g=D.horizon||[];
+  return `<div class="panel"><h2>Fixture runway <span class="tag">expected pts per GW</span></h2><div class="body"><div class="runway" style="--n:${g.length}">
+    <div class="r hd"><span></span>${g.map(x=>`<span>GW${x}</span>`).join('')}</div>
+    ${xi.slice().sort((a,b)=>b.ep5-a.ep5).map(r=>`<div class="r"><span class="nmv">${esc(r.name)}</span>${(r.per_gw||[]).map(v=>`<span class="c" style="${heat(v,1,7)}">${v.toFixed(1)}</span>`).join('')}</div>`).join('')}
+  </div></div></div>`;
+}
+
+/* ---- the loaded view ---- */
 function suggestHTML(){
   const P=D.plan;
   if(!P||!P.out||!P.out.length){
-    return `<div class="panel"><h2>Suggested changes</h2><div class="body">
-      <div class="verdict hold" style="font-size:20px;font-weight:800;color:var(--turf)">Hold - no transfer beats keeping your squad</div>
-      <p class="note" style="border:none">The optimiser tried every legal swap within your bank and free transfers and none
-      gained enough projected points over the next ${(D.horizon||[]).length||5} gameweeks to justify the move.</p></div></div>`;
+    return `<div class="panel" id="sugg"><h2>Suggested changes</h2><div class="body">
+      <div style="font:900 26px/1.1 var(--sans);color:var(--turf)">Hold. No transfer beats your squad.</div>
+      <p class="note" style="border:none">The optimiser tried every legal swap within your bank and free transfers and none gained enough projected points over the next ${(D.horizon||[]).length||5} gameweeks to justify the move.</p></div></div>`;
   }
   const gws=P.horizon_gws||D.horizon||[];
   const gain=(P.proj_h||0)-(P.mine_h||0);
@@ -1065,32 +1298,32 @@ function suggestHTML(){
     const bw=18, gap=6, W=Math.max(1,og.length)*(bw*2+gap+8);
     const bars=og.map((v,g)=>{
       const x=g*(bw*2+gap+8);
-      return `<rect x="${x}" y="${50-v/mx*44}" width="${bw}" height="${v/mx*44}" rx="2" fill="#F2545B"/>
-        <rect x="${x+bw+2}" y="${50-ig[g]/mx*44}" width="${bw}" height="${ig[g]/mx*44}" rx="2" fill="#35C46B"/>
+      return `<rect x="${x}" y="${50-v/mx*44}" width="${bw}" height="${v/mx*44}" rx="3" fill="#F2545B"/>
+        <rect x="${x+bw+2}" y="${50-ig[g]/mx*44}" width="${bw}" height="${ig[g]/mx*44}" rx="3" fill="#35C46B"/>
         <text x="${x+bw}" y="62" text-anchor="middle" font-size="9" fill="#7E8AA6">${gws[g]!=null?'GW'+gws[g]:''}</text>`;
     }).join('');
-    return `<div class="sugg"><div class="sw">
-        <div class="who out"><s>SELL · ${esc(o.pos)} · ${esc(o.club)}</s><b>${esc(o.name)}</b><s class="num">£${o.price.toFixed(1)}m · ${sw.out_fix?esc(sw.out_fix):''}</s></div>
-        <div style="text-align:center;color:var(--dim)">→</div>
-        <div class="who in"><s>BUY · ${esc(i.pos)} · ${esc(i.club)}</s><b>${esc(i.name)}</b><s class="num">£${i.price.toFixed(1)}m · ${sw.in_fix?esc(sw.in_fix):''}</s></div></div>
-      <div class="frow" style="justify-content:space-between;align-items:flex-end;margin:12px 0 4px;gap:10px">
-        <svg viewBox="0 0 ${W} 66" style="max-width:${Math.min(W,260)}px;width:100%;height:auto">${bars}</svg>
+    return `<div class="sugg" style="animation-delay:${k*70}ms"><div class="sw">
+        <div class="who out">${shirt(o.pos)}<div><s>SELL · ${esc(o.pos)} · ${esc(o.club)}</s><b>${esc(o.name)}</b><s class="num">£${o.price.toFixed(1)}m${sw.out_fix?' · '+esc(sw.out_fix):''}</s></div></div>
+        <div class="ar">→</div>
+        <div class="who in">${shirt(i.pos)}<div><s>BUY · ${esc(i.pos)} · ${esc(i.club)}</s><b>${esc(i.name)}</b><s class="num">£${i.price.toFixed(1)}m${sw.in_fix?' · '+esc(sw.in_fix):''}</s></div></div></div>
+      <div class="frow" style="justify-content:space-between;align-items:flex-end;margin:14px 0 6px;gap:10px">
+        <svg viewBox="0 0 ${W} 66" style="max-width:${Math.min(W,270)}px;width:100%;height:auto">${bars}</svg>
         <div style="text-align:right"><span class="gain${(sw.gain||0)<0?' neg':''}">${(sw.gain||0)>=0?'+':''}${(sw.gain||0).toFixed(1)} pts</span>
-          <div style="font-size:10px;color:var(--dim);margin-top:5px"><span style="color:var(--coral)">■</span> ${esc(o.name)} <span style="color:var(--turf);margin-left:6px">■</span> ${esc(i.name)}</div></div></div>
+          <div style="font-size:10px;color:var(--dim);margin-top:7px"><span style="color:var(--coral)">■</span> ${esc(o.name)} &nbsp;<span style="color:var(--turf)">■</span> ${esc(i.name)}</div></div></div>
       ${(sw.reasons||[]).map(r=>`<div class="rs"><i class="${esc(r.k)}">${esc(r.k)}</i><span>${esc(r.t)}</span></div>`).join('')}
     </div>`;
   }).join('');
-  return `<div class="panel"><h2>Suggested changes <span class="tag">${P.out.length} transfer${P.out.length>1?'s':''}</span></h2><div class="body">
-    <div class="frow" style="gap:18px;margin-bottom:12px;flex-wrap:wrap">
-      <div><div class="eyebrow">Projected gain</div><div class="num" style="font:800 24px var(--mono);color:var(--turf)">${gain>=0?'+':''}${gain.toFixed(1)}</div></div>
-      <div><div class="eyebrow">Free transfers used</div><div class="num" style="font:800 24px var(--mono)">${P.used_ft??P.out.length}</div></div>
-      <div><div class="eyebrow">Hit cost</div><div class="num" style="font:800 24px var(--mono);color:${P.hits?'var(--coral)':'var(--chalk)'}">${P.hits?'-'+P.hits*4:'0'}</div></div></div>
+  return `<div class="panel" id="sugg"><h2>Suggested changes <span class="tag">${P.out.length} transfer${P.out.length>1?'s':''}</span></h2><div class="body">
+    <div class="kpi">
+      <div><span class="eyebrow">Projected gain</span><div class="v" style="color:var(--turf)">${gain>=0?'+':''}${gain.toFixed(1)}</div></div>
+      <div><span class="eyebrow">Free transfers used</span><div class="v">${P.used_ft??P.out.length}</div></div>
+      <div><span class="eyebrow">Hit cost</span><div class="v" style="color:${P.hits?'var(--coral)':'var(--chalk)'}">${P.hits?'-'+P.hits*4:'0'}</div></div></div>
     ${cards}</div></div>`;
 }
 function whyHTML(){
   const rows=[...(D.xi||[]),...(D.bench||[])];
   const r=rows.find(x=>x.name===MYSEL)||rows.find(x=>x.captain)||rows[0];
-  if(!r)return '';
+  if(!r)return '<div id="why"></div>';
   const LAB={appearance:'Appearance',goals:'Goals',assists:'Assists',cs:'Clean sheet',conceded:'Goals conceded',saves:'Saves',defcon:'Defensive actions',bonus:'Bonus'};
   const parts=Object.entries(r.parts||{}).filter(([k,v])=>Math.abs(v)>=0.005);
   const mx=Math.max(0.5,...parts.map(([,v])=>Math.abs(v)));
@@ -1099,17 +1332,19 @@ function whyHTML(){
     <div><div class="bar${v<0?' neg':''}" style="width:${Math.abs(v)/mx*100}%"></div></div>
     <b class="num" style="text-align:right">${v>=0?'+':''}${v.toFixed(2)}</b></div>`).join('');
   return `<div class="panel" id="why"><h2>How the model thinks <span class="tag">tap any player on the pitch</span></h2><div class="body">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">${shirt(r.pos).replace('class="shirt"','class="shirt" style="width:44px"')}
+      <div><b style="font-size:18px">${esc(r.name)}</b><div style="color:var(--dim);font-size:12px">${esc(r.club)} · ${esc(r.pos)} · £${r.price.toFixed(1)}m · ${r.owned.toFixed(0)}% owned</div></div></div>
     <div class="pipe">
-      <div class="st"><span class="n">1 · FIXTURE</span><b>${esc(r.fixture||'-')}</b><span>Opponent strength and venue set how many goals the model expects each side to score (Poisson with a Dixon-Coles low-score fix).</span></div>
-      <div class="st"><span class="n">2 · MINUTES</span><b>${(r.p_appear*100).toFixed(0)}% to play · ~${r.exp_min||0} min</b><span>Start rate from this club's depth chart, shared so a club cannot field more than 11.</span></div>
-      <div class="st"><span class="n">3 · FPL RULES</span><b>${tot.toFixed(2)} expected pts</b><span>Each scoring rule is priced separately, then added up - below.</span></div>
-      <div class="st"><span class="n">4 · SIMULATE</span><b>${(r.floor??0).toFixed(0)} – ${(r.ceiling??0).toFixed(0)} range</b><span>Thousands of simulated gameweeks give the spread and a ${((r.p_haul||0)*100).toFixed(0)}% chance of a 10+ haul.</span></div>
+      <div class="st"><span class="n">01 · FIXTURE</span><b>${esc(r.fixture||'-')}</b><span>Opponent strength and venue set how many goals each side is expected to score (Poisson with a Dixon-Coles low-score fix).</span></div>
+      <div class="st"><span class="n">02 · MINUTES</span><b>${(r.p_appear*100).toFixed(0)}% to play · ~${r.exp_min||0} min</b><span>Start rate from this club's depth chart, shared so no club can field more than 11.</span></div>
+      <div class="st"><span class="n">03 · FPL RULES</span><b>${tot.toFixed(2)} pts raw</b><span>Each scoring rule priced separately, then added up below.</span></div>
+      <div class="st"><span class="n">04 · SIMULATE</span><b>${(r.floor??0).toFixed(0)} – ${(r.ceiling??0).toFixed(0)} range</b><span>Thousands of simulated gameweeks give the spread and a ${((r.p_haul||0)*100).toFixed(0)}% chance of a 10+ haul.</span></div>
     </div>
-    <div class="eyebrow" style="margin:4px 0 6px">${esc(r.name)} · where the ${r.ep.toFixed(1)} comes from (this gameweek, before calibration)</div>
+    <div class="eyebrow" style="margin:4px 0 6px">Where the ${r.ep.toFixed(1)} comes from (this gameweek, before calibration)</div>
     ${wf||'<div class="note" style="border:none">No fixture this gameweek.</div>'}
-    <div class="eyebrow" style="margin:14px 0 4px">Next gameweeks</div>
-    <div class="frow" style="gap:6px">${(r.per_gw||[]).map((v,g)=>`<div style="flex:1;text-align:center;background:var(--slate2);border-radius:8px;padding:7px 0">
-      <div style="font-size:10px;color:var(--dim)">GW${(D.horizon||[])[g]??''}</div><b class="num">${v.toFixed(1)}</b></div>`).join('')}</div>
+    <div class="eyebrow" style="margin:16px 0 6px">Next gameweeks</div>
+    <div class="frow" style="gap:6px">${(r.per_gw||[]).map((v,g)=>`<div style="flex:1;text-align:center;border-radius:10px;padding:8px 0;${heat(v,1,7)}">
+      <div style="font-size:10px;opacity:.75">GW${(D.horizon||[])[g]??''}</div><b class="num">${v.toFixed(1)}</b></div>`).join('')}</div>
   </div></div>`;
 }
 function drawMy(){
@@ -1117,32 +1352,46 @@ function drawMy(){
   if(WZ.on||D.squad_source==='none'||!(D.xi||[]).length){
     if(!WZ.on){WZ.on=true;wzOpen(false);return;}
     box.innerHTML=wizardHTML();
-    const q=document.getElementById('wzq');if(q&&document.activeElement===document.body){/* keep focus off on first paint */}
+    if(WZ.focus){WZ.focus=false;const q=document.getElementById('wzq');if(q)q.focus({preventScroll:true});}
     return;
   }
   const byPos=p=>(D.xi||[]).filter(r=>r.pos===p);
   const cap=(D.xi||[]).find(r=>r.captain);
-  const dl=D.deadline?new Date(D.deadline).toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'-';
-  box.innerHTML=`
-    <div class="mystrip">
-      <div class="mystat"><div class="eyebrow">Gameweek</div><div class="v">${D.gw}</div><div class="s">${esc(dl)}</div></div>
-      <div class="mystat"><div class="eyebrow">Squad value</div><div class="v">£${(D.squad_value||0).toFixed(1)}m</div><div class="s">in the bank £${(D.bank||0).toFixed(1)}m</div></div>
-      <div class="mystat"><div class="eyebrow">Free transfers</div><div class="v">${D.free_transfers??1}</div><div class="s">${D.plan&&D.plan.out&&D.plan.out.length?D.plan.out.length+' suggested':'none needed'}</div></div>
-      <div class="mystat"><div class="eyebrow">Projected XI</div><div class="v">${(D.xi_total_c||0).toFixed(1)}</div><div class="s">captain doubled</div></div>
-      <div class="mystat"><div class="eyebrow">Captain</div><div class="v" style="font-size:16px">${cap?esc(cap.name):'-'}</div><div class="s">${cap?cap.ep.toFixed(1)+' pts · '+esc(cap.fixture||''):''}</div></div>
-    </div>
+  const lo=D.xi_floor??0,hi=D.xi_ceiling??0,med=D.xi_median??0,val=D.xi_total_c||0;
+  const ms=D.deadline?new Date(D.deadline)-new Date():0;
+  const left=ms>0?(ms>=864e5?`${Math.floor(ms/864e5)}d ${Math.floor(ms/36e5)%24}h`:`${Math.floor(ms/36e5)}h ${Math.floor(ms/6e4)%60}m`):'closed';
+  let pi=0;
+  box.innerHTML=shirtDefs()+`
+    <div class="mhero"><div class="grid"><div>
+      <span class="live"><i></i>GW${D.gw} · deadline in ${left}</span>
+      <div class="big"><span id="bigv" data-count="${val.toFixed(1)}" data-dec="1">${val.toFixed(1)}</span><small>projected pts</small></div>
+      <p class="sub">${cap?`Captain <b>${esc(cap.name)}</b> (${esc(cap.fixture||'')}) is the model's pick. `:''}Your XI is built to score between <b>${lo}</b> and <b>${hi}</b> in a typical week.
+        ${D.plan&&D.plan.out&&D.plan.out.length?`The brain sees <b>${D.plan.out.length} transfer${D.plan.out.length>1?'s':''}</b> worth making.`:'No transfer beats holding.'}</p>
+      ${featChips()}
+      <div class="frow" style="margin-top:18px;gap:10px;flex-wrap:wrap">
+        <button class="go" onclick="scr('sugg')">See suggested moves ↓</button>
+        <button class="go" style="background:rgba(255,255,255,.08);color:var(--chalk);box-shadow:none;border:1px solid var(--edge)" onclick="wzOpen(true)">Rebuild my 15</button></div>
+    </div><div>${gaugeSVG(lo,med,hi,val)}
+      <div class="frow" style="justify-content:center;gap:18px;margin-top:6px;font-size:12px;color:var(--dim);flex-wrap:wrap">
+        <span>Squad <b class="num" style="color:#fff">£${(D.squad_value||0).toFixed(1)}m</b></span>
+        <span>Bank <b class="num" style="color:#fff">£${(D.bank||0).toFixed(1)}m</b></span>
+        <span>Free transfers <b class="num" style="color:#fff">${D.free_transfers??1}</b></span></div></div></div></div>
+    ${tilesHTML()}
+    <div class="sec"><h2>Your team</h2><span>Tap a player to see the model's working</span></div>
     <div class="cols"><div>
-      <div class="panel"><h2>Starting XI <span class="tag">${esc(D.formation||'')}</span></h2><div class="body" style="padding:10px">
-        <div class="fplpitch">${['GK','DEF','MID','FWD'].map(p=>`<div class="prow">${byPos(p).map(r=>pcard(r,{sel:MYSEL})).join('')}</div>`).join('')}</div>
-        <div class="eyebrow" style="margin:12px 0 4px">Bench · autosub order</div>
-        <div class="benchrow">${(D.bench||[]).map(r=>pcard(r,{bench:1,sel:MYSEL})).join('')}</div>
-        <button class="go" style="width:100%;margin-top:12px;background:var(--slate2);color:var(--chalk)" onclick="wzOpen(true)">Rebuild / change my 15</button>
+      <div class="panel"><h2>Starting XI <span class="tag">${esc(D.formation||'auto')}</span></h2><div class="body" style="padding:12px">
+        <div class="fplpitch"><div class="ln"></div><div class="cc"></div>${['GK','DEF','MID','FWD'].map(p=>`<div class="prow">${byPos(p).map(r=>pcard(r,pi++)).join('')}</div>`).join('')}</div>
+        <div class="eyebrow" style="margin:16px 0 8px">Bench · autosub order</div>
+        <div class="benchrow">${(D.bench||[]).map(r=>pcard(r,pi++,{bench:1})).join('')}</div>
       </div></div>
-      ${scorecardHTML()}
+      ${runwayHTML()}
+      ${dnaHTML()}
     </div><div>
       ${suggestHTML()}
+      ${captainHTML()}
       ${whyHTML()}
     </div></div>`;
+  countUps();
 }
 
 function render(){
