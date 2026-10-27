@@ -112,7 +112,7 @@ CONFIG = os.path.join(HERE, "config.json")
 # from the page itself, whether the thing you are looking at is the thing that
 # was last published - a stale service worker or a deploy that never finished
 # otherwise look exactly like a model that is ignoring you.
-BUILD = "d4667d9 · 27 Oct 10:59"
+BUILD = "ca1ac67 · 27 Oct 11:05"
 
 # ---------------------------------------------------------------------------
 # ZeroGPU compatibility.
@@ -573,6 +573,7 @@ def compute(force=False, for_team=None, adhoc=None, anonymous=False):
     # everyone yet to kick off. Three complete gameweeks are needed; before that
     # the layer stays off and the structural model runs alone.
     learned_note = None
+    cold_runs = {}      # eid -> (blank streak, output minus xGI) over the recent window, display only
     scored = sorted(e["id"] for e in evs if _gw_fully_scored(e["id"], fx))
     if phase != PHASE_PRESEASON and len(scored) >= 3:
         anchor = scored[-1]
@@ -592,6 +593,26 @@ def compute(force=False, for_team=None, adhoc=None, anonymous=False):
                 except (TypeError, ValueError):
                     return 0.0
             last3 = window[-3:]
+            # "Fraud check" evidence, shown never applied. fraud_check_test.py found
+            # that among the model's top-100 a drought of 4+ blanks scores -0.15
+            # (se 0.39) against projection and a big negative xGI gap actually
+            # regresses UP (+0.26), and that every EP penalty on either lowered
+            # ranking quality. So the model is not changed - but the manager should
+            # still be told, so it is a flag, not a haircut.
+            for e in bs["elements"]:
+                eid = e["id"]
+                apps = [g for g in window if _stat(g, eid, "minutes") >= 45]
+                if not apps:
+                    continue
+                streak = 0
+                for g in reversed(apps):
+                    if _stat(g, eid, "total_points") <= 2:
+                        streak += 1
+                    else:
+                        break
+                gap = sum(_stat(g, eid, "goals_scored") + _stat(g, eid, "assists")
+                          - _stat(g, eid, "expected_goal_involvements") for g in apps)
+                cold_runs[eid] = (streak, gap, len(apps))
             recent, starts5 = {}, {}
             for e in bs["elements"]:
                 eid = e["id"]
@@ -1059,6 +1080,12 @@ def compute(force=False, for_team=None, adhoc=None, anonymous=False):
             f.append(f"Start risk {p['p_appear']:.0%}")
         if p["news"]:
             f.append(p["news"][:70])
+        cr = cold_runs.get(p["id"])
+        if cr and p["p_appear"] >= 0.6:
+            if cr[0] >= 3:
+                f.append(f"Cold run: {cr[0]} blanks in a row")
+            elif cr[2] >= 4 and cr[1] <= -1.5:
+                f.append(f"Returns {abs(cr[1]):.1f} below xGI lately")
         return f
 
     def prow(pid, order=None):

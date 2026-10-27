@@ -428,3 +428,16 @@ too (4/2/1) and was mixed - correlation preferred 4, top-30 preferred 2 - so it 
 **The team-strength prior (`prior_weight_games` = 6) is untested**: the archive harness has no team
 prior and the live harness would leak future results into past gameweeks. Do not change it without
 building a clean test.
+
+**The "fraud check" - measured, and the answer is a flag, not a penalty.** The worry: the model
+promoting players with big underlying numbers who keep blanking (Mbeumo, Calvert). `fraud_check_test.py`,
+2025-26 walk-forward, 12 gameweeks, production model (prior K=150): among the model's top-100 each
+week, actual minus projected points was **-0.15 (se 0.39, n=49) for players on a 4+ blank streak**
+(3 straight: +0.68), and **+0.26 (se 0.50, n=52) for players 1.5+ below their xGI** - i.e. droughts
+did not under-deliver and a big negative xGI gap regressed *up*, as regression to the mean says.
+Every EP penalty tried (streak 0.05-0.20/game, xGI gap -10%/-20%) lowered rho and top-30, rewarding
+the gap (+20%) raised best-squad points 54.8 -> 57.5 but not rho (noise). So no haircut was added.
+What was actually behind the Mbeumo/Calvert cases was the 700-minute prior leaning on last season,
+which is why `prior_minutes_weight` went to 150. Cold runs are surfaced as display-only flags
+(`Cold run: N blanks in a row`, `Returns X below xGI lately`, from the last-5-gameweek window the
+learned layer already loads) so the manager sees them; they never touch `ep`.
