@@ -2315,6 +2315,16 @@ self.addEventListener('fetch',e=>{
     }).catch(()=>caches.match(e.request)));
     return;
   }
+  /* The page itself is network-first. Cache-first served the PREVIOUS build until a
+     second reload, so a fix that had shipped looked like it had not. Offline still
+     falls back to the cached copy. */
+  if(e.request.mode==='navigate'||u.pathname==='/'){
+    e.respondWith(fetch(e.request).then(res=>{
+      if(res.ok){const c=res.clone();caches.open(C).then(x=>x.put(e.request,c));}
+      return res;
+    }).catch(()=>caches.match(e.request)));
+    return;
+  }
   e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
     if(res.ok){const c=res.clone();caches.open(C).then(x=>x.put(e.request,c));}
     return res;

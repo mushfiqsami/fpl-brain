@@ -112,7 +112,7 @@ CONFIG = os.path.join(HERE, "config.json")
 # from the page itself, whether the thing you are looking at is the thing that
 # was last published - a stale service worker or a deploy that never finished
 # otherwise look exactly like a model that is ignoring you.
-BUILD = "ca1ac67 · 27 Oct 11:05"
+BUILD = "642adff · 27 Oct 11:15"
 
 # ---------------------------------------------------------------------------
 # ZeroGPU compatibility.
@@ -2402,6 +2402,16 @@ self.addEventListener('fetch',e=>{
     e.respondWith(fetch(e.request).then(r=>{
       if(u.pathname==='/api/data'&&r.ok){const c=r.clone();caches.open(C).then(x=>x.put(e.request,c));}
       return r;
+    }).catch(()=>caches.match(e.request)));
+    return;
+  }
+  /* The page itself is network-first. Cache-first served the PREVIOUS build until a
+     second reload, so a fix that had shipped looked like it had not. Offline still
+     falls back to the cached copy. */
+  if(e.request.mode==='navigate'||u.pathname==='/'){
+    e.respondWith(fetch(e.request).then(res=>{
+      if(res.ok){const c=res.clone();caches.open(C).then(x=>x.put(e.request,c));}
+      return res;
     }).catch(()=>caches.match(e.request)));
     return;
   }
