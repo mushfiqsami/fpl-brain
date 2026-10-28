@@ -1944,6 +1944,105 @@ def start_adhoc(body):
     return jid
 
 
+# ---------------------------------------------------------------------------
+# The chart explorer (/explorer). One row per player who has played, one entry per
+# gameweek they featured in. Built from the same live feed as everything else, so
+# it moves forward by itself the moment a gameweek is fully scored - it used to be
+# a hand-published snapshot that went stale.
+# ---------------------------------------------------------------------------
+_EXPL = {"key": None, "html": None, "at": 0.0}
+_NUMBER_WORDS = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six", 7: "Seven",
+                 8: "Eight", 9: "Nine", 10: "Ten", 11: "Eleven", 12: "Twelve"}
+
+
+def esc_html(x):
+    return str(x).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
+def explorer_data(cl, bs, fx):
+    teams = {t["id"]: t["short_name"] for t in bs["teams"]}
+    byid = {e["id"]: e for e in bs["elements"]}
+    POS = {1: "GK", 2: "DEF", 3: "MID", 4: "FWD"}
+    total_players = bs.get("total_players") or 11000000
+    diff_by_gw, opp_by_gw = {}, {}
+    for x in fx:
+        g = x.get("event")
+        if g is None:
+            continue
+        diff_by_gw.setdefault(g, {})
+        opp_by_gw.setdefault(g, {})
+        diff_by_gw[g][x["team_h"]] = x.get("team_h_difficulty", 3)
+        diff_by_gw[g][x["team_a"]] = x.get("team_a_difficulty", 3)
+        opp_by_gw[g][x["team_h"]] = (x["team_a"], True)
+        opp_by_gw[g][x["team_a"]] = (x["team_h"], False)
+    gws = [g for g in range(1, 39) if _gw_fully_scored(g, fx)]
+
+    def fl(v, nd=2):
+        try:
+            return round(float(v or 0), nd)
+        except (TypeError, ValueError):
+            return 0.0
+
+    players = {}
+    for g in gws:
+        for el in cl.live(g).get("elements") or []:
+            e = byid.get(int(el["id"]))
+            st = el.get("stats") or {}
+            if not e or (st.get("minutes") or 0) <= 0:
+                continue
+            rec = players.setdefault(e["id"], dict(id=e["id"], name=e["web_name"], games=[]))
+            tid = e["team"]
+            opp, home = opp_by_gw.get(g, {}).get(tid, (None, None))
+            rec["games"].append(dict(
+                gw=g, points=st.get("total_points", 0), minutes=st.get("minutes", 0),
+                fdr=diff_by_gw.get(g, {}).get(tid, 3), home=home, opp=teams.get(opp, "?"),
+                goals=st.get("goals_scored", 0), assists=st.get("assists", 0),
+                saves=st.get("saves", 0), bonus=st.get("bonus", 0),
+                dc=st.get("defensive_contribution", 0), cs=st.get("clean_sheets", 0),
+                gc=st.get("goals_conceded", 0), xg=fl(st.get("expected_goals")),
+                xa=fl(st.get("expected_assists")), xgi=fl(st.get("expected_goal_involvements")),
+                bps=st.get("bps", 0), yc=st.get("yellow_cards", 0), rc=st.get("red_cards", 0),
+                influence=fl(st.get("influence"), 1), creativity=fl(st.get("creativity"), 1),
+                threat=fl(st.get("threat"), 1), ict=fl(st.get("ict_index"), 1)))
+    out = []
+    for eid, rec in players.items():
+        e = byid[eid]
+        net = (e.get("transfers_in_event") or 0) - (e.get("transfers_out_event") or 0)
+        out.append(dict(
+            id=eid, name=e["web_name"], club=teams[e["team"]], team_id=e["team"],
+            pos=POS[e["element_type"]], price=round(e["now_cost"] / 10, 1),
+            owned=fl(e.get("selected_by_percent")),
+            pen_order=e.get("penalties_order"),
+            cfk_order=e.get("corners_and_indirect_freekicks_order"),
+            dfk_order=e.get("direct_freekicks_order"),
+            net_transfers_pct=round(net / total_players * 100, 3),
+            price_rise=round((e.get("cost_change_start") or 0) / 10, 1),
+            games=rec["games"]))
+    return out, (gws[-1] if gws else 0)
+
+
+def explorer_page():
+    """The explorer HTML for the latest fully scored gameweek, cached for an hour."""
+    from fplbrain.api import LiveClient
+    cl = LiveClient(load_config().get("cache_minutes", 60))
+    bs, fx = cl.bootstrap(), cl.fixtures()
+    last = max([g for g in range(1, 39) if _gw_fully_scored(g, fx)] or [0])
+    key = (last, len(bs["elements"]))
+    with LOCK:
+        if _EXPL["key"] == key and time.time() - _EXPL["at"] < 3600:
+            return _EXPL["html"]
+    data, last = explorer_data(cl, bs, fx)
+    word = (_NUMBER_WORDS.get(last, str(last)) + (" gameweek" if last == 1 else " gameweeks"))
+    html = (EXPLORER
+            .replace("__RAW_DATA__", json.dumps(data, separators=(",", ":"), ensure_ascii=False)
+                     .replace("</", "<\\/"))
+            .replace("__NP__", str(len(data))).replace("__GWNW__", word)
+            .replace("__GWN__", str(last)).replace("__MAXMIN__", str(90 * max(1, last))))
+    with LOCK:
+        _EXPL.update(key=key, html=html, at=time.time())
+    return html
+
+
 def run_job(force=False):
     with LOCK:
         if STATE["status"] == "running":
@@ -2027,6 +2126,11 @@ def route(method, path, raw=b""):
     if method == "GET":
         if p == "/":
             return 200, "text/html", PAGE
+        if p == "/explorer":
+            try:
+                return 200, "text/html", explorer_page()
+            except Exception as exc:
+                return 503, "text/html", f"<p style='font:14px sans-serif;padding:20px'>The explorer could not load its data ({esc_html(exc)}). Try again in a minute.</p>"
         if p == "/manifest.webmanifest":
             return 200, "application/manifest+json", MANIFEST
         if p == "/sw.js":
@@ -2337,6 +2441,12 @@ _ui = os.path.join(HERE, "ui.html")
 if os.path.exists(_ui):
     with open(_ui, encoding="utf-8") as f:
         PAGE = f.read()
+
+EXPLORER = ""   # the chart explorer template, from explorer.html (embedded in the bundle)
+_ex = os.path.join(HERE, "explorer.html")
+if os.path.exists(_ex):
+    with open(_ex, encoding="utf-8") as f:
+        EXPLORER = f.read()
 
 # The service worker cache name is derived from the page content itself, so any
 # UI change automatically busts phones that already installed the PWA. A fixed

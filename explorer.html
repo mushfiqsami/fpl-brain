@@ -1,0 +1,780 @@
+<title>Form Under the Fixture</title>
+<style>
+.viz-root{
+  --surface-1:#fcfcfb; --surface-2:#f2f1ec; --surface-3:#e9e7df;
+  --border:#dedad0; --border-strong:#c7c2b4;
+  --text-primary:#161512; --text-secondary:#54524a; --text-muted:#8b8879;
+  --accent:#4a3aa7; --accent-ink:#ffffff;
+  --series-mid:#2a78d6; --series-fwd:#eb6834; --series-def:#1baf7a; --series-gk:#4a3aa7;
+  --series-mid-fill:#2a78d633; --series-fwd-fill:#eb683433; --series-def-fill:#1baf7a33; --series-gk-fill:#4a3aa733;
+  --good:#0ca30c; --warn:#c9860a; --crit:#d03b3b;
+  color-scheme:light;
+  font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  background:var(--surface-1); color:var(--text-primary);
+  min-height:100%;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .viz-root{
+    --surface-1:#18181a; --surface-2:#212023; --surface-3:#2a292c;
+    --border:#3a3940; --border-strong:#4b4a52;
+    --text-primary:#f5f4f2; --text-secondary:#c3c2b9; --text-muted:#8f8d85;
+    --accent:#9085e9; --accent-ink:#161522;
+    --series-mid:#3987e5; --series-fwd:#d95926; --series-def:#199e70; --series-gk:#9085e9;
+    --series-mid-fill:#3987e540; --series-fwd-fill:#d9592640; --series-def-fill:#199e7040; --series-gk-fill:#9085e940;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] .viz-root{
+  --surface-1:#18181a; --surface-2:#212023; --surface-3:#2a292c;
+  --border:#3a3940; --border-strong:#4b4a52;
+  --text-primary:#f5f4f2; --text-secondary:#c3c2b9; --text-muted:#8f8d85;
+  --accent:#9085e9; --accent-ink:#161522;
+  --series-mid:#3987e5; --series-fwd:#d95926; --series-def:#199e70; --series-gk:#9085e9;
+  --series-mid-fill:#3987e540; --series-fwd-fill:#d9592640; --series-def-fill:#199e7040; --series-gk-fill:#9085e940;
+  color-scheme:dark;
+}
+.viz-root *{box-sizing:border-box;}
+.viz-root{padding:20px 16px 40px;}
+.wrap{max-width:1180px;margin:0 auto;}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(28px,5vw,42px);
+   letter-spacing:.2px;margin:0 0 4px;text-wrap:balance;color:var(--text-primary);}
+.sub{color:var(--text-secondary);font-size:14px;max-width:65ch;line-height:1.5;margin:0 0 4px;}
+.meta-line{color:var(--text-muted);font-size:12px;margin:0 0 22px;font-family:'IBM Plex Mono',monospace;}
+.meta-line b{color:var(--text-secondary);font-weight:500;}
+
+.panel{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+.filter-grid{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:flex-start;}
+.filter-group{display:flex;flex-direction:column;gap:7px;min-width:0;}
+.filter-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:500;}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{
+  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;padding:5px 11px;border-radius:999px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-secondary);
+  cursor:pointer;user-select:none;transition:background .12s,color .12s,border-color .12s;
+  line-height:1.3;
+}
+.chip:hover{border-color:var(--accent);}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+.chip .swatch{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.chip.on .swatch{background:currentColor;opacity:.9;}
+
+.range-row{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-secondary);}
+.range-row input[type="range"]{width:130px;accent-color:var(--accent);}
+.range-row input[type="number"]{
+  width:60px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:4px 6px;border-radius:6px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);
+}
+.search-box{
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:7px 11px;border-radius:8px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);width:180px;
+}
+.search-box::placeholder{color:var(--text-muted);}
+.reset-btn{
+  align-self:flex-end;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;
+  padding:7px 14px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface-1);
+  color:var(--text-secondary);cursor:pointer;
+}
+.reset-btn:hover{color:var(--crit);border-color:var(--crit);}
+
+.preset-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.preset-btn{
+  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:999px;
+  border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;transition:background .12s,color .12s;
+}
+.preset-btn:hover{background:var(--accent);color:var(--accent-ink);}
+
+.axis-row{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;margin-bottom:6px;}
+.axis-field{display:flex;align-items:center;gap:8px;}
+.axis-field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;}
+.axis-field select{
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:6px 10px;border-radius:8px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);
+  max-width:220px;
+}
+.count-badge{
+  margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);
+  background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:4px 12px;
+}
+
+.chart-shell{position:relative;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 10px 6px;}
+svg#scatter{width:100%;height:auto;display:block;overflow:visible;}
+.axis text{fill:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:10.5px;}
+.axis line, .axis path{stroke:var(--border-strong);}
+.gridline{stroke:var(--border);stroke-width:1;}
+.axis-title{fill:var(--text-secondary);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:500;}
+.dot{stroke:var(--surface-2);stroke-width:1;cursor:pointer;transition:opacity .1s;}
+.dot.dim{opacity:.12;}
+.dot.hi{stroke:var(--text-primary);stroke-width:2;}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;padding:10px 4px 4px;font-size:12px;color:var(--text-secondary);}
+.legend-item{display:flex;align-items:center;gap:6px;}
+.legend-mark{width:11px;height:11px;border-radius:50%;flex:none;}
+.legend-mark.gk{border-radius:2px;transform:rotate(45deg);}
+
+.tooltip{
+  position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--border-strong);
+  border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text-primary);box-shadow:0 4px 18px #00000022;
+  min-width:150px;z-index:5;line-height:1.55;opacity:0;transition:opacity .08s;
+}
+.tooltip.show{opacity:1;}
+.tooltip .tt-name{font-weight:600;font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:.2px;}
+.tooltip .tt-sub{color:var(--text-muted);font-size:11px;margin-bottom:4px;}
+.tooltip .tt-row{display:flex;justify-content:space-between;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+.tooltip .tt-row span:last-child{color:var(--text-secondary);}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);margin-top:16px;}
+.table-scroll{max-height:520px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:920px;}
+thead th{
+  position:sticky;top:0;background:var(--surface-3);text-align:right;padding:9px 12px;
+  font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:11px;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--text-secondary);cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border-strong);
+  z-index:2;
+}
+thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){text-align:left;}
+thead th.sorted{color:var(--accent);}
+thead th .arrow{font-size:9px;margin-left:3px;}
+tbody td{padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--text-primary);
+  border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){text-align:left;font-family:'IBM Plex Sans',sans-serif;}
+tbody tr:hover{background:var(--surface-3);}
+.pos-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;letter-spacing:.03em;}
+.pos-tag.gk{background:var(--series-gk-fill);color:var(--series-gk);}
+.pos-tag.def{background:var(--series-def-fill);color:var(--series-def);}
+.pos-tag.mid{background:var(--series-mid-fill);color:var(--series-mid);}
+.pos-tag.fwd{background:var(--series-fwd-fill);color:var(--series-fwd);}
+
+.foot{margin-top:22px;font-size:11.5px;color:var(--text-muted);line-height:1.6;max-width:70ch;}
+.foot code{font-family:'IBM Plex Mono',monospace;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
+
+@media (max-width:640px){
+  .filter-grid{gap:14px 18px;}
+  .search-box, .axis-field select{max-width:100%;width:100%;}
+  .axis-field{width:100%;}
+  .axis-field select{flex:1;}
+  .count-badge{margin-left:0;}
+  table{min-width:760px;}
+}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="viz-root" id="app">
+  <div class="wrap">
+    <h1>Form Under the Fixture</h1>
+    <p class="sub">Every outfield return and every save from Gameweeks 1&ndash;__GWN__, plotted against whatever you want to see it against. Filter by fixture difficulty to isolate form against easy or hard opponents specifically &mdash; that is where the patterns a single average hides usually show up. The four quick-find buttons below set up a filtered, sorted view for a specific question in one click.</p>
+    <p class="meta-line"><b>__NP__</b> players &middot; <b>GW1&ndash;GW__GWN__</b> &middot; difficulty scale <b>1</b> (easiest) to <b>5</b> (hardest), as published by the fixture list</p>
+
+    <div class="panel">
+      <div class="filter-grid">
+        <div class="filter-group">
+          <span class="filter-label">Position</span>
+          <div class="chip-row" id="posChips"></div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Fixture difficulty faced</span>
+          <div class="chip-row" id="fdrChips"></div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Venue</span>
+          <div class="chip-row" id="venueChips"></div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Set pieces</span>
+          <div class="chip-row" id="setPieceChips"></div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Min. total minutes (GW1&ndash;__GWN__)</span>
+          <div class="range-row">
+            <input type="range" id="minMinutes" min="0" max="__MAXMIN__" step="15" value="0">
+            <span id="minMinutesVal">0</span>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Price range (&pound;m)</span>
+          <div class="range-row">
+            <input type="number" id="priceMin" min="3.5" max="16" step="0.1" value="3.5">
+            <span>&ndash;</span>
+            <input type="number" id="priceMax" min="3.5" max="16" step="0.1" value="16">
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Ownership % (max)</span>
+          <div class="range-row">
+            <input type="range" id="maxOwned" min="0" max="100" step="1" value="100">
+            <span id="maxOwnedVal">100%</span>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Search player / club</span>
+          <input type="text" class="search-box" id="searchBox" placeholder="e.g. Haaland, Arsenal">
+        </div>
+        <button class="reset-btn" id="resetBtn">Reset filters</button>
+      </div>
+      <div class="preset-row">
+        <span class="filter-label" style="align-self:center;">Quick finds</span>
+        <button class="preset-btn" id="presetGems">Hidden gems</button>
+        <button class="preset-btn" id="presetNailed">Nailed essentials</button>
+        <button class="preset-btn" id="presetRisers">In-form risers</button>
+        <button class="preset-btn" id="presetMomentum">Trending now</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="axis-row">
+        <div class="axis-field">
+          <label for="axisX">X axis</label>
+          <select id="axisX"></select>
+        </div>
+        <div class="axis-field">
+          <label for="axisY">Y axis</label>
+          <select id="axisY"></select>
+        </div>
+        <span class="count-badge" id="countBadge">421 players shown</span>
+      </div>
+      <div class="chart-shell">
+        <svg id="scatter" viewBox="0 0 960 560" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="foot">Built from FPL's own live gameweek data. "Points per match" and every rate stat use only games the player actually appeared in under the active filters &mdash; benched or unused weeks are excluded from the average, not counted as zero. <code>xGI</code> is expected goal involvement (xG + xA), the underlying chance-creation number behind a goal or assist. <code>ICT Index</code> is FPL's own composite of Influence, Creativity and Threat. "Set pieces &middot; Takers only" isolates whoever is first in line for penalties, corners/indirect free-kicks, or direct free-kicks at their club right now. __GWNW__ is still a small sample for any one player &mdash; read a single point as a data point, not a verdict. <b>Transfer momentum</b> and <b>price change</b> are today's live snapshot, not a historical trend &mdash; this page cannot see what either looked like on a past gameweek. <b>Recent form swing</b> compares each player's last 3 appearances to his earlier ones; it needs at least 4 games played under the active filters or it reads as &mdash;.</p>
+  </div>
+</div>
+
+<script>
+const RAW_DATA = __RAW_DATA__;
+</script>
+<script>
+(function(){
+  "use strict";
+  const root = document.getElementById('app');
+  const POS_ORDER = ['GK','DEF','MID','FWD'];
+  const POS_COLOR = {GK:'series-gk', DEF:'series-def', MID:'series-mid', FWD:'series-fwd'};
+  const POS_LABEL = {GK:'Goalkeepers', DEF:'Defenders', MID:'Midfielders', FWD:'Forwards'};
+  const FDR_LABEL = {1:'1 · easiest',2:'2',3:'3',4:'4',5:'5 · hardest'};
+
+  function cssVar(name){ return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+  // ---------- precompute fixed per-player facts ----------
+  const players = RAW_DATA.map(p=>{
+    const totalMinutesAll = p.games.reduce((s,g)=>s+g.minutes,0);
+    return Object.assign({}, p, {totalMinutesAll});
+  });
+
+  // ---------- state ----------
+  const state = {
+    pos: new Set(POS_ORDER),
+    fdr: new Set([1,2,3,4,5]),
+    venue: 'all', // all | home | away
+    setPiece: 'all', // all | takers
+    maxOwned: 100,
+    minMinutes: 0,
+    priceMin: 3.5,
+    priceMax: 16,
+    search: '',
+    axisX: 'price',
+    axisY: 'ppm',
+    sortKey: 'totalPoints',
+    sortDir: -1,
+    hoverId: null,
+  };
+
+  // ---------- metric registry ----------
+  // each metric computed from a player's FILTERED games (difficulty + venue applied)
+  function gamesPlayed(g){ return g.filter(x=>x.minutes>0).length; }
+  function sum(g,k){ return g.reduce((s,x)=>s+(x[k]||0),0); }
+  function perMatch(total, gp){ return gp>0 ? total/gp : null; }
+
+  const METRICS = [
+    {key:'price', label:'Price (£m)', decimals:1, fmt:v=>'£'+v.toFixed(1)+'m',
+      calc:(p)=>p.price},
+    {key:'totalPoints', label:'Total points', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'points')},
+    {key:'ppm', label:'Points per match', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>perMatch(sum(g,'points'), gamesPlayed(g))},
+    {key:'gamesPlayed', label:'Games played (filtered)', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>gamesPlayed(g)},
+    {key:'totalMinutes', label:'Minutes played (filtered)', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'minutes')},
+    {key:'pricePerPoint', label:'Price per point (£m)', decimals:2, fmt:v=>'£'+v.toFixed(2)+'m',
+      calc:(p,g)=>{const t=sum(g,'points'); return t>0 ? p.price/t : null;}},
+    {key:'pointsPerPrice', label:'Points per £m (value)', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>sum(g,'points')/p.price},
+    {key:'totalGoals', label:'Goals', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'goals')},
+    {key:'totalAssists', label:'Assists', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'assists')},
+    {key:'goalInvolvements', label:'Goal involvements (G+A)', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'goals')+sum(g,'assists')},
+    {key:'savesPerMatch', label:'Saves per match', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>perMatch(sum(g,'saves'), gamesPlayed(g))},
+    {key:'totalSaves', label:'Total saves', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'saves')},
+    {key:'csCount', label:'Clean sheets', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'cs')},
+    {key:'dcPerMatch', label:'Defensive contribution / match', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>perMatch(sum(g,'dc'), gamesPlayed(g))},
+    {key:'bonusTotal', label:'Bonus points', decimals:0, fmt:v=>Math.round(v),
+      calc:(p,g)=>sum(g,'bonus')},
+    {key:'bpsPerMatch', label:'BPS per match', decimals:1, fmt:v=>v.toFixed(1),
+      calc:(p,g)=>perMatch(sum(g,'bps'), gamesPlayed(g))},
+    {key:'xgTotal', label:'xG (total)', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>sum(g,'xg')},
+    {key:'xaTotal', label:'xA (total)', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>sum(g,'xa')},
+    {key:'xgiPerMatch', label:'xGI per match', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>perMatch(sum(g,'xgi'), gamesPlayed(g))},
+    {key:'xgiTotal', label:'xGI (total)', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>sum(g,'xgi')},
+    {key:'pointsMinusXgi', label:'Points vs xGI gap (fraud check)', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>{const gp=gamesPlayed(g); const ppm=perMatch(sum(g,'points'),gp); const xgi=perMatch(sum(g,'xgi'),gp);
+        return (ppm==null||xgi==null) ? null : ppm - xgi*5.5;}},
+    {key:'ownership', label:'Ownership %', decimals:1, fmt:v=>v.toFixed(1)+'%',
+      calc:(p)=>p.owned},
+    {key:'ictPerMatch', label:'ICT Index per match', decimals:1, fmt:v=>v.toFixed(1),
+      calc:(p,g)=>perMatch(sum(g,'ict'), gamesPlayed(g))},
+    {key:'influencePerMatch', label:'Influence per match', decimals:1, fmt:v=>v.toFixed(1),
+      calc:(p,g)=>perMatch(sum(g,'influence'), gamesPlayed(g))},
+    {key:'creativityPerMatch', label:'Creativity per match', decimals:1, fmt:v=>v.toFixed(1),
+      calc:(p,g)=>perMatch(sum(g,'creativity'), gamesPlayed(g))},
+    {key:'threatPerMatch', label:'Threat per match', decimals:1, fmt:v=>v.toFixed(1),
+      calc:(p,g)=>perMatch(sum(g,'threat'), gamesPlayed(g))},
+    {key:'cardsPer90', label:'Cards per 90', decimals:2, fmt:v=>v.toFixed(2),
+      calc:(p,g)=>{const mins=sum(g,'minutes'); if(mins<=0) return null;
+        return (sum(g,'yc')+sum(g,'rc')*2)/mins*90;}},
+    {key:'netTransfers', label:'Transfer momentum (% of all managers, now)', decimals:3, fmt:v=>(v>0?'+':'')+v.toFixed(3)+'%',
+      calc:(p)=>p.net_transfers_pct},
+    {key:'priceRise', label:'Price change since season start (£m)', decimals:1, fmt:v=>(v>0?'+':'')+'£'+v.toFixed(1)+'m',
+      calc:(p)=>p.price_rise},
+    {key:'formSwing', label:'Recent form swing (last 3 vs earlier, pts/match)', decimals:2, fmt:v=>(v>0?'+':'')+v.toFixed(2),
+      calc:(p,g)=>{
+        const played=g.filter(x=>x.minutes>0).sort((a,b)=>a.gw-b.gw);
+        if(played.length<4) return null;
+        const recentN = Math.min(3, Math.floor(played.length/2));
+        const recent = played.slice(-recentN);
+        const earlier = played.slice(0, played.length-recentN);
+        const avg = arr => arr.reduce((s,x)=>s+x.points,0)/arr.length;
+        return avg(recent) - avg(earlier);
+      }},
+  ];
+  const METRIC_BY_KEY = Object.fromEntries(METRICS.map(m=>[m.key,m]));
+
+  // ---------- filtering ----------
+  function filterGames(p){
+    return p.games.filter(g=>{
+      if(!state.fdr.has(g.fdr)) return false;
+      if(state.venue==='home' && !g.home) return false;
+      if(state.venue==='away' && g.home) return false;
+      return true;
+    });
+  }
+
+  function isSetPieceTaker(p){
+    return p.pen_order===1 || p.cfk_order===1 || p.dfk_order===1;
+  }
+  function setPieceRoles(p){
+    const roles=[];
+    if(p.pen_order===1) roles.push('Pens');
+    if(p.cfk_order===1) roles.push('Corners/IFK');
+    if(p.dfk_order===1) roles.push('Direct FK');
+    return roles;
+  }
+
+  function getFiltered(){
+    const search = state.search.trim().toLowerCase();
+    const rows = [];
+    for(const p of players){
+      if(!state.pos.has(p.pos)) continue;
+      if(p.price < state.priceMin || p.price > state.priceMax) continue;
+      if(p.owned > state.maxOwned) continue;
+      if(p.totalMinutesAll < state.minMinutes) continue;
+      if(state.setPiece==='takers' && !isSetPieceTaker(p)) continue;
+      if(search && !(p.name.toLowerCase().includes(search) || p.club.toLowerCase().includes(search))) continue;
+      const g = filterGames(p);
+      if(g.filter(x=>x.minutes>0).length===0) continue;
+      const row = {id:p.id, name:p.name, club:p.club, pos:p.pos, price:p.price, owned:p.owned,
+        setPiece: setPieceRoles(p), _games:g};
+      for(const m of METRICS){ row[m.key] = m.calc(p, g); }
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  // ---------- build static controls ----------
+  function buildChips(container, items, isOn, onToggle, colorClass){
+    container.innerHTML='';
+    items.forEach(({value,label})=>{
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (isOn(value)?' on':'');
+      if(colorClass){
+        const sw = document.createElement('span');
+        sw.className='swatch';
+        sw.style.background = isOn(value) ? '' : `var(--${colorClass(value)})`;
+        chip.appendChild(sw);
+      }
+      chip.appendChild(document.createTextNode(label));
+      chip.addEventListener('click', ()=>{ onToggle(value); render(); });
+      container.appendChild(chip);
+    });
+  }
+
+  function buildAxisSelects(){
+    const xSel = document.getElementById('axisX');
+    const ySel = document.getElementById('axisY');
+    [xSel,ySel].forEach(sel=>{
+      sel.innerHTML='';
+      METRICS.forEach(m=>{
+        const opt=document.createElement('option');
+        opt.value=m.key; opt.textContent=m.label;
+        sel.appendChild(opt);
+      });
+    });
+    xSel.value = state.axisX; ySel.value = state.axisY;
+    xSel.addEventListener('change', ()=>{state.axisX=xSel.value; render();});
+    ySel.addEventListener('change', ()=>{state.axisY=ySel.value; render();});
+  }
+
+  function niceTicks(min,max,count){
+    if(min===max){ min-=1; max+=1; }
+    const span = max-min;
+    const step0 = span/count;
+    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const norm = step0/mag;
+    let step;
+    if(norm<1.5) step=1*mag; else if(norm<3) step=2*mag; else if(norm<7) step=5*mag; else step=10*mag;
+    const niceMin = Math.floor(min/step)*step;
+    const niceMax = Math.ceil(max/step)*step;
+    const ticks=[];
+    for(let v=niceMin; v<=niceMax+1e-9; v+=step) ticks.push(Math.round(v*1000)/1000);
+    return {ticks, min:niceMin, max:niceMax};
+  }
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  function el(tag, attrs){
+    const e = document.createElementNS(svgNS, tag);
+    for(const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  const MARGIN = {top:16, right:24, bottom:52, left:64};
+  const W = 960, H = 560;
+
+  function renderChart(rows){
+    const svg = document.getElementById('scatter');
+    svg.innerHTML='';
+    const xm = METRIC_BY_KEY[state.axisX], ym = METRIC_BY_KEY[state.axisY];
+    const pts = rows.filter(r=>r[xm.key]!=null && r[ym.key]!=null);
+    const plotW = W - MARGIN.left - MARGIN.right;
+    const plotH = H - MARGIN.top - MARGIN.bottom;
+
+    if(pts.length===0){
+      const t = el('text', {x:W/2, y:H/2, 'text-anchor':'middle'});
+      t.setAttribute('class','axis-title');
+      t.textContent = 'No players match these filters — try widening one.';
+      svg.appendChild(t);
+      return;
+    }
+
+    let xVals = pts.map(r=>r[xm.key]), yVals = pts.map(r=>r[ym.key]);
+    const xr = niceTicks(Math.min(...xVals), Math.max(...xVals), 6);
+    const yr = niceTicks(Math.min(...yVals), Math.max(...yVals), 6);
+    const xScale = v => MARGIN.left + (v-xr.min)/(xr.max-xr.min||1)*plotW;
+    const yScale = v => MARGIN.top + plotH - (v-yr.min)/(yr.max-yr.min||1)*plotH;
+
+    const g = el('g',{});
+    // gridlines + ticks
+    yr.ticks.forEach(t=>{
+      const y = yScale(t);
+      g.appendChild(el('line',{class:'gridline', x1:MARGIN.left, x2:W-MARGIN.right, y1:y, y2:y}));
+      const lbl = el('text',{class:'axis', x:MARGIN.left-8, y:y+4, 'text-anchor':'end'});
+      lbl.textContent = xm===ym? t : (Number.isInteger(t)? t : t.toFixed(2));
+      g.appendChild(lbl);
+    });
+    xr.ticks.forEach(t=>{
+      const x = xScale(t);
+      const lbl = el('text',{class:'axis', x:x, y:H-MARGIN.bottom+18, 'text-anchor':'middle'});
+      lbl.textContent = Number.isInteger(t) ? t : t.toFixed(2);
+      g.appendChild(lbl);
+    });
+    g.appendChild(el('line',{class:'axis', x1:MARGIN.left, x2:W-MARGIN.right, y1:H-MARGIN.bottom, y2:H-MARGIN.bottom}));
+    g.appendChild(el('line',{class:'axis', x1:MARGIN.left, x2:MARGIN.left, y1:MARGIN.top, y2:H-MARGIN.bottom}));
+
+    const xTitle = el('text',{class:'axis-title', x:MARGIN.left+plotW/2, y:H-10, 'text-anchor':'middle'});
+    xTitle.textContent = xm.label;
+    g.appendChild(xTitle);
+    const yTitle = el('text',{class:'axis-title', x:-(MARGIN.top+plotH/2), y:16, 'text-anchor':'middle', transform:'rotate(-90)'});
+    yTitle.textContent = ym.label;
+    g.appendChild(yTitle);
+
+    svg.appendChild(g);
+
+    const dotsLayer = el('g',{});
+    const tooltip = document.getElementById('tooltip');
+    const shell = document.querySelector('.chart-shell');
+
+    pts.forEach(r=>{
+      const cx = xScale(r[xm.key]), cy = yScale(r[ym.key]);
+      const colorVar = `var(--${POS_COLOR[r.pos]})`;
+      let shape;
+      if(r.pos==='GK'){
+        const s=6.5;
+        shape = el('rect', {x:cx-s, y:cy-s, width:s*2, height:s*2, transform:`rotate(45 ${cx} ${cy})`});
+      } else {
+        shape = el('circle', {cx, cy, r:6});
+      }
+      shape.setAttribute('class','dot');
+      shape.setAttribute('fill', colorVar);
+      shape.style.fillOpacity = 0.82;
+      shape.addEventListener('mouseenter', (e)=>showTip(r, e));
+      shape.addEventListener('mousemove', (e)=>positionTip(e));
+      shape.addEventListener('mouseleave', hideTip);
+      shape.addEventListener('click', (e)=>{ e.stopPropagation(); showTip(r,e); });
+      dotsLayer.appendChild(shape);
+    });
+    svg.appendChild(dotsLayer);
+
+    function showTip(r, evt){
+      tooltip.innerHTML = `
+        <div class="tt-name">${r.name}</div>
+        <div class="tt-sub">${r.club} &middot; ${r.pos} &middot; £${r.price.toFixed(1)}m${r.setPiece.length? ' &middot; '+r.setPiece.join(', ') : ''}</div>
+        <div class="tt-row"><span>${xm.label}</span><span>${xm.fmt(r[xm.key])}</span></div>
+        <div class="tt-row"><span>${ym.label}</span><span>${ym.fmt(r[ym.key])}</span></div>
+        <div class="tt-row"><span>Total points</span><span>${Math.round(r.totalPoints)}</span></div>
+        <div class="tt-row"><span>Games (filtered)</span><span>${r.gamesPlayed}</span></div>
+      `;
+      tooltip.classList.add('show');
+      positionTip(evt);
+    }
+    function positionTip(evt){
+      const rect = shell.getBoundingClientRect();
+      let x = evt.clientX - rect.left + 14;
+      let y = evt.clientY - rect.top + 14;
+      tooltip.style.left = x+'px';
+      tooltip.style.top = y+'px';
+    }
+    function hideTip(){ tooltip.classList.remove('show'); }
+  }
+
+  function renderLegend(){
+    const legend = document.getElementById('legend');
+    legend.innerHTML='';
+    POS_ORDER.forEach(pos=>{
+      const item = document.createElement('div');
+      item.className='legend-item';
+      const mark = document.createElement('span');
+      mark.className = 'legend-mark' + (pos==='GK' ? ' gk' : '');
+      mark.style.background = `var(--${POS_COLOR[pos]})`;
+      item.appendChild(mark);
+      item.appendChild(document.createTextNode(POS_LABEL[pos]));
+      legend.appendChild(item);
+    });
+  }
+
+  const TABLE_COLS = [
+    {key:'name', label:'Player'},
+    {key:'club', label:'Club'},
+    {key:'pos', label:'Pos'},
+    {key:'price', label:'£m'},
+    {key:'gamesPlayed', label:'GP'},
+    {key:'totalPoints', label:'Pts'},
+    {key:'ppm', label:'Pts/M'},
+    {key:'pricePerPoint', label:'£/Pt'},
+    {key:'goalInvolvements', label:'G+A'},
+    {key:'dcPerMatch', label:'DC/M'},
+    {key:'xgiPerMatch', label:'xGI/M'},
+    {key:'ictPerMatch', label:'ICT/M'},
+    {key:'cardsPer90', label:'Cards/90'},
+    {key:'setPiece', label:'Set piece'},
+    {key:'ownership', label:'Owned%'},
+  ];
+
+  function renderTable(rows){
+    const head = document.getElementById('tableHead');
+    head.innerHTML='';
+    TABLE_COLS.forEach(c=>{
+      const th = document.createElement('th');
+      th.textContent = c.label;
+      if(c.key===state.sortKey){
+        th.classList.add('sorted');
+        const arrow = document.createElement('span');
+        arrow.className='arrow';
+        arrow.textContent = state.sortDir===1 ? '▲' : '▼';
+        th.appendChild(arrow);
+      }
+      th.addEventListener('click', ()=>{
+        if(state.sortKey===c.key){ state.sortDir *= -1; }
+        else { state.sortKey=c.key; state.sortDir = (c.key==='name'||c.key==='club'||c.key==='pos') ? 1 : -1; }
+        render();
+      });
+      head.appendChild(th);
+    });
+
+    const sorted = rows.slice().sort((a,b)=>{
+      let av=a[state.sortKey], bv=b[state.sortKey];
+      if(Array.isArray(av)) av = av.length; if(Array.isArray(bv)) bv = bv.length;
+      if(av==null) av = -Infinity; if(bv==null) bv = -Infinity;
+      if(typeof av==='string') return av.localeCompare(bv)*state.sortDir;
+      return (av-bv)*state.sortDir;
+    });
+
+    const body = document.getElementById('tableBody');
+    body.innerHTML='';
+    const frag = document.createDocumentFragment();
+    sorted.forEach(r=>{
+      const tr = document.createElement('tr');
+      TABLE_COLS.forEach(c=>{
+        const td = document.createElement('td');
+        if(c.key==='pos'){
+          const tag=document.createElement('span');
+          tag.className='pos-tag '+r.pos.toLowerCase();
+          tag.textContent=r.pos;
+          td.appendChild(tag);
+        } else if(c.key==='name' || c.key==='club'){
+          td.textContent = r[c.key];
+        } else if(c.key==='setPiece'){
+          td.textContent = r.setPiece.length ? r.setPiece.join(', ') : '—';
+          td.style.textAlign = 'left';
+          td.style.fontFamily = "'IBM Plex Sans',sans-serif";
+        } else {
+          const m = METRIC_BY_KEY[c.key];
+          const v = r[c.key];
+          td.textContent = v==null ? '—' : (m ? m.fmt(v) : v);
+        }
+        tr.appendChild(td);
+      });
+      frag.appendChild(tr);
+    });
+    body.appendChild(frag);
+  }
+
+  function render(){
+    const rows = getFiltered();
+    document.getElementById('countBadge').textContent = `${rows.length} player${rows.length===1?'':'s'} shown`;
+    renderChart(rows);
+    renderLegend();
+    renderTable(rows);
+  }
+
+  // ---------- wire up controls ----------
+  buildChips(document.getElementById('posChips'),
+    POS_ORDER.map(p=>({value:p,label:p})),
+    v=>state.pos.has(v),
+    v=>{ if(state.pos.has(v)){ if(state.pos.size>1) state.pos.delete(v); } else state.pos.add(v); },
+    v=>POS_COLOR[v]
+  );
+  buildChips(document.getElementById('fdrChips'),
+    [1,2,3,4,5].map(v=>({value:v,label:FDR_LABEL[v]})),
+    v=>state.fdr.has(v),
+    v=>{ if(state.fdr.has(v)){ if(state.fdr.size>1) state.fdr.delete(v); } else state.fdr.add(v); }
+  );
+  buildChips(document.getElementById('venueChips'),
+    [{value:'all',label:'All'},{value:'home',label:'Home'},{value:'away',label:'Away'}],
+    v=>state.venue===v,
+    v=>{ state.venue=v; }
+  );
+  buildChips(document.getElementById('setPieceChips'),
+    [{value:'all',label:'All'},{value:'takers',label:'Takers only'}],
+    v=>state.setPiece===v,
+    v=>{ state.setPiece=v; }
+  );
+
+  document.getElementById('minMinutes').addEventListener('input', e=>{
+    state.minMinutes = Number(e.target.value);
+    document.getElementById('minMinutesVal').textContent = state.minMinutes;
+    render();
+  });
+  document.getElementById('maxOwned').addEventListener('input', e=>{
+    state.maxOwned = Number(e.target.value);
+    document.getElementById('maxOwnedVal').textContent = state.maxOwned + '%';
+    render();
+  });
+  document.getElementById('priceMin').addEventListener('change', e=>{
+    state.priceMin = Number(e.target.value) || 3.5; render();
+  });
+  document.getElementById('priceMax').addEventListener('change', e=>{
+    state.priceMax = Number(e.target.value) || 16; render();
+  });
+  document.getElementById('searchBox').addEventListener('input', e=>{
+    state.search = e.target.value; render();
+  });
+
+  function syncControls(){
+    document.getElementById('minMinutes').value = state.minMinutes;
+    document.getElementById('minMinutesVal').textContent = state.minMinutes;
+    document.getElementById('maxOwned').value = state.maxOwned;
+    document.getElementById('maxOwnedVal').textContent = state.maxOwned + '%';
+    document.getElementById('priceMin').value = state.priceMin;
+    document.getElementById('priceMax').value = state.priceMax;
+    document.getElementById('searchBox').value = state.search;
+    document.getElementById('axisX').value = state.axisX;
+    document.getElementById('axisY').value = state.axisY;
+    buildChips(document.getElementById('posChips'), POS_ORDER.map(p=>({value:p,label:p})), v=>state.pos.has(v),
+      v=>{ if(state.pos.has(v)){ if(state.pos.size>1) state.pos.delete(v);} else state.pos.add(v); }, v=>POS_COLOR[v]);
+    buildChips(document.getElementById('fdrChips'), [1,2,3,4,5].map(v=>({value:v,label:FDR_LABEL[v]})), v=>state.fdr.has(v),
+      v=>{ if(state.fdr.has(v)){ if(state.fdr.size>1) state.fdr.delete(v);} else state.fdr.add(v); });
+    buildChips(document.getElementById('venueChips'), [{value:'all',label:'All'},{value:'home',label:'Home'},{value:'away',label:'Away'}],
+      v=>state.venue===v, v=>{ state.venue=v; });
+    buildChips(document.getElementById('setPieceChips'), [{value:'all',label:'All'},{value:'takers',label:'Takers only'}],
+      v=>state.setPiece===v, v=>{ state.setPiece=v; });
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    state.pos = new Set(POS_ORDER);
+    state.fdr = new Set([1,2,3,4,5]);
+    state.venue = 'all';
+    state.setPiece = 'all';
+    state.minMinutes = 0;
+    state.maxOwned = 100;
+    state.priceMin = 3.5; state.priceMax = 16;
+    state.search = '';
+    state.axisX = 'price'; state.axisY = 'ppm';
+    state.sortKey = 'totalPoints'; state.sortDir = -1;
+    syncControls();
+    render();
+  });
+
+  // ---- quick-find presets: each sets a sensible filter+axis+sort combo in one click ----
+  function applyPreset(partial){
+    Object.assign(state, {
+      pos: new Set(POS_ORDER), fdr: new Set([1,2,3,4,5]), venue:'all', setPiece:'all',
+      minMinutes:0, maxOwned:100, priceMin:3.5, priceMax:16, search:''
+    }, partial);
+    syncControls();
+    render();
+  }
+  document.getElementById('presetGems').addEventListener('click', ()=>{
+    // low ownership, enough minutes to trust the sample, sorted by value
+    applyPreset({maxOwned:7.5, minMinutes:180, axisX:'ownership', axisY:'pointsPerPrice',
+      sortKey:'pointsPerPrice', sortDir:-1});
+  });
+  document.getElementById('presetNailed').addEventListener('click', ()=>{
+    // high, reliable minutes — essentials you can trust not to be rotated
+    applyPreset({minMinutes:450, axisX:'totalMinutes', axisY:'ppm',
+      sortKey:'totalMinutes', sortDir:-1});
+  });
+  document.getElementById('presetRisers').addEventListener('click', ()=>{
+    // trending upward over their last few games specifically
+    applyPreset({minMinutes:180, axisX:'ppm', axisY:'formSwing',
+      sortKey:'formSwing', sortDir:-1});
+  });
+  document.getElementById('presetMomentum').addEventListener('click', ()=>{
+    // who the game's other managers are moving toward RIGHT NOW
+    applyPreset({minMinutes:90, axisX:'ownership', axisY:'netTransfers',
+      sortKey:'netTransfers', sortDir:-1});
+  });
+
+  buildAxisSelects();
+  render();
+})();
+</script>

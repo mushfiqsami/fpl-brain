@@ -90,6 +90,7 @@ def b64file(*p):
 # ---- gather sources -------------------------------------------------------
 srcs = {m: read("fplbrain", f"{m}.py") for m in MODULES}
 ui = read("ui.html")
+explorer = read("explorer.html")
 dash = read("dashboard.py")
 icons = {n: b64file("static", n) for n in sorted(os.listdir(os.path.join(HERE, "static")))
          if n.endswith(".png")}
@@ -102,7 +103,8 @@ _ui = os.path.join(HERE, "ui.html")
 if os.path.exists(_ui):
     with open(_ui, encoding="utf-8") as f:
         PAGE = f.read()''',
-    '''PAGE = base64.b64decode(_UI_B64).decode("utf-8")''')
+    '''PAGE = base64.b64decode(_UI_B64).decode("utf-8")
+EXPLORER = base64.b64decode(_EXPLORER_B64).decode("utf-8")''')
 
 # 2. icons come from the embedded dict, not a static/ folder
 dash = dash.replace(
@@ -207,6 +209,7 @@ for _n in _ORDER:
 ''')
 
 parts.append(f'_UI_B64 = "{base64.b64encode(ui.encode()).decode()}"\n\n')
+parts.append(f'_EXPLORER_B64 = "{base64.b64encode(explorer.encode()).decode()}"\n\n')
 parts.append("_ICONS = {\n")
 for n, b in icons.items():
     parts.append(f'    "{n}": "{b}",\n')

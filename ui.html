@@ -530,6 +530,7 @@ details.sg>summary::-webkit-details-marker{display:none}
     <div data-t="now" onclick="showTab('now')">This week</div>
     <div data-t="targets" onclick="showTab('targets')">Targets</div>
     <div data-t="updates" onclick="showTab('updates')">Updates</div>
+    <div data-t="explorer" onclick="showTab('explorer')">Explorer</div>
     <div data-t="data" onclick="showTab('data')">Data</div>
     <div data-t="fixtures" onclick="showTab('fixtures')">Fixtures</div>
   </div>
@@ -538,6 +539,13 @@ details.sg>summary::-webkit-details-marker{display:none}
 
   <!-- ============== MY TEAM ============== -->
   <div id="t-my"><div id="mybox"></div></div>
+
+  <!-- ============== EXPLORER (the interactive chart, served at /explorer) ============== -->
+  <div id="t-explorer" class="hidden">
+    <iframe id="explframe" title="Form Under the Fixture - interactive player explorer"
+      style="width:100%;height:calc(100vh - 170px);min-height:720px;border:1px solid var(--edge);border-radius:14px;background:#0B1020"></iframe>
+    <p class="note" style="border:none"><a href="/explorer" target="_blank" rel="noopener" style="color:var(--sodium)">Open the explorer full screen &#8599;</a></p>
+  </div>
 
   <!-- ============== THIS WEEK ============== -->
   <div id="t-now" class="hidden">
@@ -835,6 +843,7 @@ let D=null,ALLP=[],SORT='ep5',SRVMATCH={};
 const SLOTS=[['GK',2],['DEF',5],['MID',5],['FWD',3]];
 const ICONS={
  my:'<path d="M8 3 3 6l2 4 3-1v12h8V9l3 1 2-4-5-3a4 4 0 0 1-8 0Z"/>',
+ explorer:'<circle cx="7" cy="16" r="2"/><circle cx="12" cy="8" r="2"/><circle cx="18" cy="13" r="2"/><circle cx="16" cy="19" r="1.5"/><path d="M3 3v18h18"/>',
  now:'<path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/>',
  teams:'<rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/>',
  squad:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
@@ -843,7 +852,7 @@ const ICONS={
  data:'<path d="M4 20V10M10 20V4M16 20v-9M22 20H2"/>',
  fixtures:'<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
  settings:'<circle cx="12" cy="12" r="3"/><path d="M20 12a8 8 0 0 0-.2-1.8l2-1.5-2-3.4-2.3 1a8 8 0 0 0-3-1.8L14 2h-4l-.5 2.5a8 8 0 0 0-3 1.8l-2.3-1-2 3.4 2 1.5A8 8 0 0 0 4 12a8 8 0 0 0 .2 1.8l-2 1.5 2 3.4 2.3-1a8 8 0 0 0 3 1.8L10 22h4l.5-2.5a8 8 0 0 0 3-1.8l2.3 1 2-3.4-2-1.5A8 8 0 0 0 20 12Z"/>'};
-const LABELS={my:'My Team',now:'This week',targets:'Targets',updates:'Updates',data:'Data',fixtures:'Fixtures'};
+const LABELS={my:'My Team',now:'This week',targets:'Targets',updates:'Updates',explorer:'Explorer',data:'Data',fixtures:'Fixtures'};
 document.getElementById('nav').innerHTML=Object.keys(LABELS).map(k=>
  `<a data-t="${k}" onclick="showTab('${k}')"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${LABELS[k]}</a>`).join('');
 
@@ -853,6 +862,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const nrm=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'')
   .toLowerCase().replace(/[.'\-_]/g,'').split(/\s+/).filter(Boolean).join(' ');
 function showTab(t){
+  if(t==='explorer'){const f=document.getElementById('explframe');if(f&&!f.getAttribute('src'))f.setAttribute('src','/explorer');}
   document.querySelectorAll('[id^=t-]').forEach(e=>e.classList.add('hidden'));
   const el=document.getElementById('t-'+t); if(el)el.classList.remove('hidden');
   document.querySelectorAll('nav a,.dtabs div').forEach(e=>e.classList.toggle('on',e.dataset.t===t));
