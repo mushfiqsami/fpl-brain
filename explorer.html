@@ -1,172 +1,198 @@
 <title>Form Under the Fixture</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
+/* Always dark and on the same palette as the rest of FPL Brain: deep indigo, sodium amber. */
 .viz-root{
-  --surface-1:#fcfcfb; --surface-2:#f2f1ec; --surface-3:#e9e7df;
-  --border:#dedad0; --border-strong:#c7c2b4;
-  --text-primary:#161512; --text-secondary:#54524a; --text-muted:#8b8879;
-  --accent:#4a3aa7; --accent-ink:#ffffff;
-  --series-mid:#2a78d6; --series-fwd:#eb6834; --series-def:#1baf7a; --series-gk:#4a3aa7;
-  --series-mid-fill:#2a78d633; --series-fwd-fill:#eb683433; --series-def-fill:#1baf7a33; --series-gk-fill:#4a3aa733;
-  --good:#0ca30c; --warn:#c9860a; --crit:#d03b3b;
-  color-scheme:light;
-  font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
-  background:var(--surface-1); color:var(--text-primary);
-  min-height:100%;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]) .viz-root{
-    --surface-1:#18181a; --surface-2:#212023; --surface-3:#2a292c;
-    --border:#3a3940; --border-strong:#4b4a52;
-    --text-primary:#f5f4f2; --text-secondary:#c3c2b9; --text-muted:#8f8d85;
-    --accent:#9085e9; --accent-ink:#161522;
-    --series-mid:#3987e5; --series-fwd:#d95926; --series-def:#199e70; --series-gk:#9085e9;
-    --series-mid-fill:#3987e540; --series-fwd-fill:#d9592640; --series-def-fill:#199e7040; --series-gk-fill:#9085e940;
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"] .viz-root{
-  --surface-1:#18181a; --surface-2:#212023; --surface-3:#2a292c;
-  --border:#3a3940; --border-strong:#4b4a52;
-  --text-primary:#f5f4f2; --text-secondary:#c3c2b9; --text-muted:#8f8d85;
-  --accent:#9085e9; --accent-ink:#161522;
-  --series-mid:#3987e5; --series-fwd:#d95926; --series-def:#199e70; --series-gk:#9085e9;
-  --series-mid-fill:#3987e540; --series-fwd-fill:#d9592640; --series-def-fill:#199e7040; --series-gk-fill:#9085e940;
+  --surface-1:#0E1530; --surface-2:rgba(24,33,62,.72); --surface-3:#1B2543;
+  --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.18);
+  --text-primary:#E8ECF5; --text-secondary:#B7C2DC; --text-muted:#7E8AA6;
+  --accent:#F2A93B; --accent-ink:#241503; --accent-soft:rgba(242,169,59,.16);
+  --series-mid:#4EA0F5; --series-fwd:#F0683A; --series-def:#2BC48A; --series-gk:#A59BF5;
+  --series-mid-fill:#4EA0F52e; --series-fwd-fill:#F0683A2e; --series-def-fill:#2BC48A2e; --series-gk-fill:#A59BF52e;
+  --good:#35C46B; --warn:#F2A93B; --crit:#F2545B;
   color-scheme:dark;
+  font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  color:var(--text-primary); min-height:100vh;
 }
+html,body{margin:0;background:#0B1020;}
+body::before{content:"";position:fixed;inset:-20vmax;z-index:-1;pointer-events:none;
+  background:
+   radial-gradient(38vmax 30vmax at 10% 6%,rgba(139,124,246,.24),transparent 62%),
+   radial-gradient(34vmax 28vmax at 92% 2%,rgba(242,169,59,.17),transparent 62%),
+   radial-gradient(40vmax 34vmax at 72% 98%,rgba(53,196,107,.11),transparent 62%);}
 .viz-root *{box-sizing:border-box;}
-.viz-root{padding:20px 16px 40px;}
-.wrap{max-width:1180px;margin:0 auto;}
-h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(28px,5vw,42px);
-   letter-spacing:.2px;margin:0 0 4px;text-wrap:balance;color:var(--text-primary);}
-.sub{color:var(--text-secondary);font-size:14px;max-width:65ch;line-height:1.5;margin:0 0 4px;}
-.meta-line{color:var(--text-muted);font-size:12px;margin:0 0 22px;font-family:'IBM Plex Mono',monospace;}
-.meta-line b{color:var(--text-secondary);font-weight:500;}
+.viz-root{padding:18px 16px 44px;}
+.wrap{max-width:1500px;margin:0 auto;}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-.panel{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
-.filter-grid{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:flex-start;}
-.filter-group{display:flex;flex-direction:column;gap:7px;min-width:0;}
-.filter-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:500;}
+/* ---------- hero ---------- */
+.hero{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-end;justify-content:space-between;margin-bottom:16px;animation:up .4s both}
+h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:clamp(34px,5vw,52px);line-height:.95;
+   letter-spacing:.2px;margin:0 0 8px;color:#fff;}
+h1 em{font-style:normal;color:var(--accent);}
+.sub{color:var(--text-secondary);font-size:13.5px;max-width:68ch;line-height:1.55;margin:0;}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:9px 14px;min-width:92px;backdrop-filter:blur(8px)}
+.stat b{display:block;font:800 20px/1.1 'IBM Plex Mono',monospace;color:#fff}
+.stat span{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:600}
+
+/* ---------- layout ---------- */
+.layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:1020px){.layout{grid-template-columns:1fr}.filters{position:static!important;max-height:none!important}}
+.panel{background:var(--surface-2);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:14px;
+  backdrop-filter:blur(10px);box-shadow:0 14px 36px -24px #000;animation:up .45s both}
+.filters{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto;scrollbar-width:thin;scrollbar-color:#33406A transparent}
+.filters h2{margin:0 0 10px;font:700 10px/1 'IBM Plex Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted);
+  display:flex;align-items:center;gap:8px}
+.filters h2::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--accent)}
+.filter-group{display:flex;flex-direction:column;gap:7px;min-width:0;margin-bottom:14px}
+.filter-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+.filter-label output,.filter-label span.v{font-family:'IBM Plex Mono',monospace;color:var(--accent);font-size:12px;letter-spacing:0;text-transform:none}
 .chip-row{display:flex;flex-wrap:wrap;gap:6px;}
+
+/* ---------- toggle chips: the on/off state must be unmistakable ---------- */
 .chip{
-  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;padding:5px 11px;border-radius:999px;
-  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-secondary);
-  cursor:pointer;user-select:none;transition:background .12s,color .12s,border-color .12s;
-  line-height:1.3;
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;padding:6px 11px 6px 8px;border-radius:999px;
+  border:1.5px solid var(--border-strong);background:transparent;color:var(--text-muted);
+  cursor:pointer;user-select:none;transition:background .14s,color .14s,border-color .14s,transform .1s;line-height:1.2;
 }
-.chip:hover{border-color:var(--accent);}
-.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
-.chip .swatch{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
-.chip.on .swatch{background:currentColor;opacity:.9;}
+.chip::before{content:"";width:15px;height:15px;border-radius:50%;flex:none;border:1.5px solid var(--border-strong);
+  display:grid;place-items:center;font-size:10px;font-weight:800;line-height:1;color:transparent;transition:.14s}
+.chip:hover{border-color:var(--accent);color:var(--text-primary)}
+.chip:active{transform:scale(.96)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:#fff}
+.chip.on::before{content:"✓";background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* position chips carry their series colour on the tick, so the legend and the filter read as one */
+.chip[data-c]::before{border-color:var(--chip-c)}
+.chip[data-c].on{border-color:var(--chip-c);background:color-mix(in srgb,var(--chip-c) 18%,transparent)}
+.chip[data-c].on::before{background:var(--chip-c);border-color:var(--chip-c);color:#0B1020}
+/* single-choice groups are segmented controls: exactly one lit segment */
+.seg{display:inline-flex;background:var(--surface-1);border:1px solid var(--border-strong);border-radius:11px;padding:3px;gap:2px;width:100%}
+.seg .chip{flex:1;justify-content:center;border:none;border-radius:8px;padding:7px 8px;color:var(--text-muted)}
+.seg .chip::before{display:none}
+.seg .chip:hover{color:#fff;background:rgba(255,255,255,.06)}
+.seg .chip.on{background:linear-gradient(180deg,#F7B950,var(--accent));color:var(--accent-ink);font-weight:700;box-shadow:0 4px 12px -4px rgba(242,169,59,.7)}
 
 .range-row{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-secondary);}
-.range-row input[type="range"]{width:130px;accent-color:var(--accent);}
+.range-row input[type="range"]{flex:1;accent-color:var(--accent);min-width:0}
 .range-row input[type="number"]{
-  width:60px;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:4px 6px;border-radius:6px;
-  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);
-}
+  flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:12.5px;padding:7px 9px;border-radius:9px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);}
 .search-box{
-  font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:7px 11px;border-radius:8px;
-  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);width:180px;
-}
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:9px 12px;border-radius:10px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);width:100%;}
+.search-box:focus,.axis-field select:focus,.range-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .search-box::placeholder{color:var(--text-muted);}
 .reset-btn{
-  align-self:flex-end;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;
-  padding:7px 14px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface-1);
-  color:var(--text-secondary);cursor:pointer;
-}
-.reset-btn:hover{color:var(--crit);border-color:var(--crit);}
+  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:600;width:100%;
+  padding:9px 14px;border-radius:10px;border:1px solid var(--border-strong);background:transparent;color:var(--text-secondary);cursor:pointer;}
+.reset-btn:hover{color:var(--crit);border-color:var(--crit)}
+.reset-btn b{color:var(--accent);font-family:'IBM Plex Mono',monospace}
 
-.preset-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+/* ---------- quick finds ---------- */
+.presets{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px}
 .preset-btn{
-  font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:999px;
-  border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;transition:background .12s,color .12s;
-}
-.preset-btn:hover{background:var(--accent);color:var(--accent-ink);}
+  text-align:left;font-family:'IBM Plex Sans',sans-serif;padding:9px 10px;border-radius:12px;cursor:pointer;
+  border:1.5px solid var(--border-strong);background:rgba(255,255,255,.03);color:var(--text-secondary);transition:.14s;display:flex;flex-direction:column;gap:3px}
+.preset-btn b{font-size:12.5px;color:#fff}
+.preset-btn span{font-size:10.5px;line-height:1.3;color:var(--text-muted)}
+.preset-btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.preset-btn.on{border-color:var(--accent);background:var(--accent-soft)}
+.preset-btn.on b::after{content:" ✓";color:var(--accent)}
 
-.axis-row{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;margin-bottom:6px;}
+/* ---------- chart ---------- */
+.axis-row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:10px;}
 .axis-field{display:flex;align-items:center;gap:8px;}
-.axis-field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);font-weight:600;}
+.axis-field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-weight:700;}
 .axis-field select{
-  font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:6px 10px;border-radius:8px;
-  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);
-  max-width:220px;
-}
-.count-badge{
-  margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);
-  background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:4px 12px;
-}
-
-.chart-shell{position:relative;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px 10px 6px;}
+  font-family:'IBM Plex Sans',sans-serif;font-size:13px;padding:8px 10px;border-radius:10px;
+  border:1px solid var(--border-strong);background:var(--surface-1);color:var(--text-primary);max-width:230px;}
+.swap{border:1px solid var(--border-strong);background:transparent;color:var(--text-secondary);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:14px}
+.swap:hover{color:var(--accent);border-color:var(--accent)}
+.count-badge{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-secondary);
+  background:var(--surface-1);border:1px solid var(--border);border-radius:999px;padding:5px 13px;}
+.chart-shell{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));border:1px solid var(--border);border-radius:14px;padding:12px 8px 4px;}
 svg#scatter{width:100%;height:auto;display:block;overflow:visible;}
 .axis text{fill:var(--text-muted);font-family:'IBM Plex Mono',monospace;font-size:10.5px;}
 .axis line, .axis path{stroke:var(--border-strong);}
-.gridline{stroke:var(--border);stroke-width:1;}
-.axis-title{fill:var(--text-secondary);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:500;}
-.dot{stroke:var(--surface-2);stroke-width:1;cursor:pointer;transition:opacity .1s;}
-.dot.dim{opacity:.12;}
-.dot.hi{stroke:var(--text-primary);stroke-width:2;}
-
-.legend{display:flex;flex-wrap:wrap;gap:16px;padding:10px 4px 4px;font-size:12px;color:var(--text-secondary);}
+.gridline{stroke:rgba(255,255,255,.06);stroke-width:1;stroke-dasharray:2 4}
+.axis-title{fill:var(--text-secondary);font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;}
+.dot{stroke:#0B1020;stroke-width:1.2;cursor:pointer;transition:opacity .12s,stroke-width .12s;}
+.dot:hover{stroke:#fff;stroke-width:2.2}
+.dot.dim{opacity:.1;}
+.dot.hi{stroke:#fff;stroke-width:2.4;}
+.legend{display:flex;flex-wrap:wrap;gap:16px;padding:10px 4px 2px;font-size:12px;color:var(--text-secondary);}
 .legend-item{display:flex;align-items:center;gap:6px;}
 .legend-mark{width:11px;height:11px;border-radius:50%;flex:none;}
 .legend-mark.gk{border-radius:2px;transform:rotate(45deg);}
-
 .tooltip{
-  position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--border-strong);
-  border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text-primary);box-shadow:0 4px 18px #00000022;
-  min-width:150px;z-index:5;line-height:1.55;opacity:0;transition:opacity .08s;
-}
+  position:absolute;pointer-events:none;background:rgba(11,16,32,.96);border:1px solid var(--border-strong);backdrop-filter:blur(8px);
+  border-radius:12px;padding:10px 13px;font-size:12px;color:var(--text-primary);box-shadow:0 12px 30px #000a;
+  min-width:160px;z-index:5;line-height:1.55;opacity:0;transition:opacity .08s;}
 .tooltip.show{opacity:1;}
-.tooltip .tt-name{font-weight:600;font-family:'Barlow Condensed',sans-serif;font-size:16px;letter-spacing:.2px;}
-.tooltip .tt-sub{color:var(--text-muted);font-size:11px;margin-bottom:4px;}
+.tooltip .tt-name{font-weight:700;font-family:'Barlow Condensed',sans-serif;font-size:18px;letter-spacing:.2px;color:#fff}
+.tooltip .tt-sub{color:var(--text-muted);font-size:11px;margin-bottom:5px;}
 .tooltip .tt-row{display:flex;justify-content:space-between;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
-.tooltip .tt-row span:last-child{color:var(--text-secondary);}
+.tooltip .tt-row span:last-child{color:#fff;}
 
-.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);margin-top:16px;}
-.table-scroll{max-height:520px;overflow-y:auto;}
+/* ---------- table ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:16px;background:var(--surface-2);backdrop-filter:blur(10px)}
+.table-scroll{max-height:560px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#33406A transparent}
 table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:920px;}
 thead th{
-  position:sticky;top:0;background:var(--surface-3);text-align:right;padding:9px 12px;
-  font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:11px;text-transform:uppercase;
-  letter-spacing:.04em;color:var(--text-secondary);cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border-strong);
-  z-index:2;
-}
+  position:sticky;top:0;background:#16203D;text-align:right;padding:10px 12px;
+  font-family:'IBM Plex Sans',sans-serif;font-weight:700;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--text-muted);cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border-strong);z-index:2;}
+thead th:hover{color:#fff}
 thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){text-align:left;}
 thead th.sorted{color:var(--accent);}
 thead th .arrow{font-size:9px;margin-left:3px;}
-tbody td{padding:7px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--text-primary);
-  border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:8px 12px;text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--text-primary);border-bottom:1px solid var(--border);white-space:nowrap;}
 tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){text-align:left;font-family:'IBM Plex Sans',sans-serif;}
-tbody tr:hover{background:var(--surface-3);}
-.pos-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;letter-spacing:.03em;}
+tbody td:first-child{font-weight:600;color:#fff}
+tbody tr:nth-child(even){background:rgba(255,255,255,.018)}
+tbody tr:hover{background:rgba(242,169,59,.08);}
+.pos-tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;letter-spacing:.04em;}
 .pos-tag.gk{background:var(--series-gk-fill);color:var(--series-gk);}
 .pos-tag.def{background:var(--series-def-fill);color:var(--series-def);}
 .pos-tag.mid{background:var(--series-mid-fill);color:var(--series-mid);}
 .pos-tag.fwd{background:var(--series-fwd-fill);color:var(--series-fwd);}
-
-.foot{margin-top:22px;font-size:11.5px;color:var(--text-muted);line-height:1.6;max-width:70ch;}
-.foot code{font-family:'IBM Plex Mono',monospace;background:var(--surface-2);padding:1px 5px;border-radius:4px;}
-
+.foot{margin-top:22px;font-size:11.5px;color:var(--text-muted);line-height:1.65;max-width:90ch;}
+.foot code{font-family:'IBM Plex Mono',monospace;background:var(--surface-3);padding:1px 6px;border-radius:5px;color:var(--text-secondary)}
 @media (max-width:640px){
-  .filter-grid{gap:14px 18px;}
-  .search-box, .axis-field select{max-width:100%;width:100%;}
-  .axis-field{width:100%;}
-  .axis-field select{flex:1;}
-  .count-badge{margin-left:0;}
-  table{min-width:760px;}
+  .axis-field{width:100%;}.axis-field select{flex:1;max-width:none}
+  .count-badge{margin-left:0;} table{min-width:760px;}
 }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap">
 
 <div class="viz-root" id="app">
   <div class="wrap">
-    <h1>Form Under the Fixture</h1>
-    <p class="sub">Every outfield return and every save from Gameweeks 1&ndash;__GWN__, plotted against whatever you want to see it against. Filter by fixture difficulty to isolate form against easy or hard opponents specifically &mdash; that is where the patterns a single average hides usually show up. The four quick-find buttons below set up a filtered, sorted view for a specific question in one click.</p>
-    <p class="meta-line"><b>__NP__</b> players &middot; <b>GW1&ndash;GW__GWN__</b> &middot; difficulty scale <b>1</b> (easiest) to <b>5</b> (hardest), as published by the fixture list</p>
+    <div class="hero">
+      <div>
+        <h1>Form under the <em>fixture</em></h1>
+        <p class="sub">Every return and every save from Gameweeks 1&ndash;__GWN__, plotted against whatever you want to see it against. Filter by fixture difficulty to isolate form against easy or hard opponents &mdash; that is where the patterns a single average hides show up. Tap a dot for the player.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>__NP__</b><span>players</span></div>
+        <div class="stat"><b>GW1&ndash;__GWN__</b><span>covered</span></div>
+        <div class="stat"><b>1 &rarr; 5</b><span>easy &rarr; hard</span></div>
+      </div>
+    </div>
 
-    <div class="panel">
-      <div class="filter-grid">
+    <div class="layout">
+      <aside class="panel filters">
+        <h2>Quick finds</h2>
+        <div class="presets">
+          <button class="preset-btn" id="presetGems"><b>Hidden gems</b><span>Low owned, strong value</span></button>
+          <button class="preset-btn" id="presetNailed"><b>Nailed essentials</b><span>Big minutes you can trust</span></button>
+          <button class="preset-btn" id="presetRisers"><b>In-form risers</b><span>Climbing over last 3 games</span></button>
+          <button class="preset-btn" id="presetMomentum"><b>Trending now</b><span>Where managers are moving</span></button>
+        </div>
+
+        <h2>Filters</h2>
         <div class="filter-group">
           <span class="filter-label">Position</span>
           <div class="chip-row" id="posChips"></div>
@@ -177,18 +203,19 @@ tbody tr:hover{background:var(--surface-3);}
         </div>
         <div class="filter-group">
           <span class="filter-label">Venue</span>
-          <div class="chip-row" id="venueChips"></div>
+          <div class="chip-row seg" id="venueChips"></div>
         </div>
         <div class="filter-group">
           <span class="filter-label">Set pieces</span>
-          <div class="chip-row" id="setPieceChips"></div>
+          <div class="chip-row seg" id="setPieceChips"></div>
         </div>
         <div class="filter-group">
-          <span class="filter-label">Min. total minutes (GW1&ndash;__GWN__)</span>
-          <div class="range-row">
-            <input type="range" id="minMinutes" min="0" max="__MAXMIN__" step="15" value="0">
-            <span id="minMinutesVal">0</span>
-          </div>
+          <span class="filter-label">Min. total minutes <span class="v" id="minMinutesVal">0</span></span>
+          <div class="range-row"><input type="range" id="minMinutes" min="0" max="__MAXMIN__" step="15" value="0"></div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Ownership max <span class="v" id="maxOwnedVal">100%</span></span>
+          <div class="range-row"><input type="range" id="maxOwned" min="0" max="100" step="1" value="100"></div>
         </div>
         <div class="filter-group">
           <span class="filter-label">Price range (&pound;m)</span>
@@ -199,53 +226,36 @@ tbody tr:hover{background:var(--surface-3);}
           </div>
         </div>
         <div class="filter-group">
-          <span class="filter-label">Ownership % (max)</span>
-          <div class="range-row">
-            <input type="range" id="maxOwned" min="0" max="100" step="1" value="100">
-            <span id="maxOwnedVal">100%</span>
-          </div>
-        </div>
-        <div class="filter-group">
           <span class="filter-label">Search player / club</span>
           <input type="text" class="search-box" id="searchBox" placeholder="e.g. Haaland, Arsenal">
         </div>
-        <button class="reset-btn" id="resetBtn">Reset filters</button>
-      </div>
-      <div class="preset-row">
-        <span class="filter-label" style="align-self:center;">Quick finds</span>
-        <button class="preset-btn" id="presetGems">Hidden gems</button>
-        <button class="preset-btn" id="presetNailed">Nailed essentials</button>
-        <button class="preset-btn" id="presetRisers">In-form risers</button>
-        <button class="preset-btn" id="presetMomentum">Trending now</button>
-      </div>
-    </div>
+        <button class="reset-btn" id="resetBtn">Reset filters <b id="activeCount"></b></button>
+      </aside>
 
-    <div class="panel">
-      <div class="axis-row">
-        <div class="axis-field">
-          <label for="axisX">X axis</label>
-          <select id="axisX"></select>
+      <main>
+        <div class="panel">
+          <div class="axis-row">
+            <div class="axis-field"><label for="axisX">X</label><select id="axisX"></select></div>
+            <button class="swap" id="swapBtn" title="Swap the axes">&#8644;</button>
+            <div class="axis-field"><label for="axisY">Y</label><select id="axisY"></select></div>
+            <span class="count-badge" id="countBadge">&nbsp;</span>
+          </div>
+          <div class="chart-shell">
+            <svg id="scatter" viewBox="0 0 960 560" preserveAspectRatio="xMidYMid meet"></svg>
+            <div class="tooltip" id="tooltip"></div>
+          </div>
+          <div class="legend" id="legend"></div>
         </div>
-        <div class="axis-field">
-          <label for="axisY">Y axis</label>
-          <select id="axisY"></select>
-        </div>
-        <span class="count-badge" id="countBadge">421 players shown</span>
-      </div>
-      <div class="chart-shell">
-        <svg id="scatter" viewBox="0 0 960 560" preserveAspectRatio="xMidYMid meet"></svg>
-        <div class="tooltip" id="tooltip"></div>
-      </div>
-      <div class="legend" id="legend"></div>
-    </div>
 
-    <div class="table-wrap">
-      <div class="table-scroll">
-        <table id="dataTable">
-          <thead><tr id="tableHead"></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table id="dataTable">
+              <thead><tr id="tableHead"></tr></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
     </div>
 
     <p class="foot">Built from FPL's own live gameweek data. "Points per match" and every rate stat use only games the player actually appeared in under the active filters &mdash; benched or unused weeks are excluded from the average, not counted as zero. <code>xGI</code> is expected goal involvement (xG + xA), the underlying chance-creation number behind a goal or assist. <code>ICT Index</code> is FPL's own composite of Influence, Creativity and Threat. "Set pieces &middot; Takers only" isolates whoever is first in line for penalties, corners/indirect free-kicks, or direct free-kicks at their club right now. __GWNW__ is still a small sample for any one player &mdash; read a single point as a data point, not a verdict. <b>Transfer momentum</b> and <b>price change</b> are today's live snapshot, not a historical trend &mdash; this page cannot see what either looked like on a past gameweek. <b>Recent form swing</b> compares each player's last 3 appearances to his earlier ones; it needs at least 4 games played under the active filters or it reads as &mdash;.</p>
@@ -280,6 +290,7 @@ const RAW_DATA = __RAW_DATA__;
     setPiece: 'all', // all | takers
     maxOwned: 100,
     minMinutes: 0,
+    preset: null,
     priceMin: 3.5,
     priceMax: 16,
     search: '',
@@ -418,13 +429,13 @@ const RAW_DATA = __RAW_DATA__;
       const chip = document.createElement('div');
       chip.className = 'chip' + (isOn(value)?' on':'');
       if(colorClass){
-        const sw = document.createElement('span');
-        sw.className='swatch';
-        sw.style.background = isOn(value) ? '' : `var(--${colorClass(value)})`;
-        chip.appendChild(sw);
+        chip.dataset.c = '1';
+        chip.style.setProperty('--chip-c', `var(--${colorClass(value)})`);
       }
+      chip.setAttribute('role','button');
+      chip.setAttribute('aria-pressed', isOn(value) ? 'true' : 'false');
       chip.appendChild(document.createTextNode(label));
-      chip.addEventListener('click', ()=>{ onToggle(value); render(); });
+      chip.addEventListener('click', ()=>{ onToggle(value); state.preset=null; syncControls(); render(); });
       container.appendChild(chip);
     });
   }
@@ -441,8 +452,8 @@ const RAW_DATA = __RAW_DATA__;
       });
     });
     xSel.value = state.axisX; ySel.value = state.axisY;
-    xSel.addEventListener('change', ()=>{state.axisX=xSel.value; render();});
-    ySel.addEventListener('change', ()=>{state.axisY=ySel.value; render();});
+    xSel.addEventListener('change', ()=>{state.axisX=xSel.value; state.preset=null; render();});
+    ySel.addEventListener('change', ()=>{state.axisY=ySel.value; state.preset=null; render();});
   }
 
   function niceTicks(min,max,count){
@@ -661,6 +672,11 @@ const RAW_DATA = __RAW_DATA__;
   function render(){
     const rows = getFiltered();
     document.getElementById('countBadge').textContent = `${rows.length} player${rows.length===1?'':'s'} shown`;
+    const nActive = (state.pos.size<4) + (state.fdr.size<5) + (state.venue!=='all') + (state.setPiece!=='all')
+      + (state.minMinutes>0) + (state.maxOwned<100) + (state.priceMin>3.5 || state.priceMax<16) + (!!state.search);
+    document.getElementById('activeCount').textContent = nActive ? `(${nActive} active)` : '';
+    [['presetGems','gems'],['presetNailed','nailed'],['presetRisers','risers'],['presetMomentum','momentum']]
+      .forEach(([id,k])=>document.getElementById(id).classList.toggle('on', state.preset===k));
     renderChart(rows);
     renderLegend();
     renderTable(rows);
@@ -690,23 +706,23 @@ const RAW_DATA = __RAW_DATA__;
   );
 
   document.getElementById('minMinutes').addEventListener('input', e=>{
-    state.minMinutes = Number(e.target.value);
+    state.minMinutes = Number(e.target.value); state.preset=null;
     document.getElementById('minMinutesVal').textContent = state.minMinutes;
     render();
   });
   document.getElementById('maxOwned').addEventListener('input', e=>{
-    state.maxOwned = Number(e.target.value);
+    state.maxOwned = Number(e.target.value); state.preset=null;
     document.getElementById('maxOwnedVal').textContent = state.maxOwned + '%';
     render();
   });
   document.getElementById('priceMin').addEventListener('change', e=>{
-    state.priceMin = Number(e.target.value) || 3.5; render();
+    state.priceMin = Number(e.target.value) || 3.5; state.preset=null; render();
   });
   document.getElementById('priceMax').addEventListener('change', e=>{
-    state.priceMax = Number(e.target.value) || 16; render();
+    state.priceMax = Number(e.target.value) || 16; state.preset=null; render();
   });
   document.getElementById('searchBox').addEventListener('input', e=>{
-    state.search = e.target.value; render();
+    state.search = e.target.value; state.preset=null; render();
   });
 
   function syncControls(){
@@ -737,7 +753,7 @@ const RAW_DATA = __RAW_DATA__;
     state.minMinutes = 0;
     state.maxOwned = 100;
     state.priceMin = 3.5; state.priceMax = 16;
-    state.search = '';
+    state.search = ''; state.preset = null;
     state.axisX = 'price'; state.axisY = 'ppm';
     state.sortKey = 'totalPoints'; state.sortDir = -1;
     syncControls();
@@ -755,26 +771,32 @@ const RAW_DATA = __RAW_DATA__;
   }
   document.getElementById('presetGems').addEventListener('click', ()=>{
     // low ownership, enough minutes to trust the sample, sorted by value
-    applyPreset({maxOwned:7.5, minMinutes:180, axisX:'ownership', axisY:'pointsPerPrice',
+    applyPreset({preset:'gems', maxOwned:7.5, minMinutes:180, axisX:'ownership', axisY:'pointsPerPrice',
       sortKey:'pointsPerPrice', sortDir:-1});
   });
   document.getElementById('presetNailed').addEventListener('click', ()=>{
     // high, reliable minutes — essentials you can trust not to be rotated
-    applyPreset({minMinutes:450, axisX:'totalMinutes', axisY:'ppm',
+    applyPreset({preset:'nailed', minMinutes:450, axisX:'totalMinutes', axisY:'ppm',
       sortKey:'totalMinutes', sortDir:-1});
   });
   document.getElementById('presetRisers').addEventListener('click', ()=>{
     // trending upward over their last few games specifically
-    applyPreset({minMinutes:180, axisX:'ppm', axisY:'formSwing',
+    applyPreset({preset:'risers', minMinutes:180, axisX:'ppm', axisY:'formSwing',
       sortKey:'formSwing', sortDir:-1});
   });
   document.getElementById('presetMomentum').addEventListener('click', ()=>{
     // who the game's other managers are moving toward RIGHT NOW
-    applyPreset({minMinutes:90, axisX:'ownership', axisY:'netTransfers',
+    applyPreset({preset:'momentum', minMinutes:90, axisX:'ownership', axisY:'netTransfers',
       sortKey:'netTransfers', sortDir:-1});
   });
 
+  document.getElementById('swapBtn').addEventListener('click', ()=>{
+    const t = state.axisX; state.axisX = state.axisY; state.axisY = t; state.preset = null;
+    syncControls(); render();
+  });
+
   buildAxisSelects();
+  syncControls();
   render();
 })();
 </script>
